@@ -1,0 +1,15 @@
+{
+  "name": "dukdui",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Dukdui student community web app",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node serve.cjs",
+    "dev": "node serve.cjs",
+    "check": "node --check app/login/auth.js && node --check app/login/firebase.js && node --check app/home/home-auth.js && node --check app/home/homepage.js && node --check app/account/account.js && node --check serve.cjs"
+  }
+}

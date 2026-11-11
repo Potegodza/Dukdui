@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+
+    function validTagAt(tags, index) {
+      return tags.size() <= index
+        || (tags[index] is string
+          && tags[index].size() >= 1
+          && tags[index].size() <= 30);
+    }
+
+    function validProfile() {
+      let data = request.resource.data;
+      let tags = data.interests;
+      return data.keys().hasAll(['bio', 'department', 'year', 'interests', 'updatedAt'])
+        && data.keys().hasOnly(['bio', 'department', 'year', 'interests', 'updatedAt'])
+        && data.bio is string
+        && data.bio.size() <= 280
+        && data.department is string
+        && data.department.size() <= 100
+        && data.year is string
+        && data.year.size() <= 20
+        && data.year in ['', 'ปี 1', 'ปี 2', 'ปี 3', 'ปี 4', 'ปี 5 ขึ้นไป']
+        && tags is list
+        && tags.size() <= 10
+        && tags.toSet().size() == tags.size()
+        && validTagAt(tags, 0)
+        && validTagAt(tags, 1)
+        && validTagAt(tags, 2)
+        && validTagAt(tags, 3)
+        && validTagAt(tags, 4)
+        && validTagAt(tags, 5)
+        && validTagAt(tags, 6)
+        && validTagAt(tags, 7)
+        && validTagAt(tags, 8)
+        && validTagAt(tags, 9)
+        && data.updatedAt == request.time;
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId) && validProfile();
+      allow delete: if false;
+    }
+  }
+}

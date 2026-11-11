@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>เข้าสู่ระบบ</title>
+    <link rel="stylesheet" href="stylelogin.css">
+
+</head>
+<body>
+    <main class="login-card">
+        <div class="card-panel" aria-hidden="true"></div>
+        <section class="form-panel">
+            <h1>เข้าสู่ระบบ</h1>
+            <p class="subtitle">เข้าสู่ระบบเพื่อใช้งาน Dukdui</p>
+
+            <form data-auth-form="login">
+                <div class="fields">
+                    <input
+                        type="email"
+                        name="email"
+                        placeholder="อีเมล"
+                        aria-label="อีเมล"
+                        autocomplete="email"
+                        required
+                    >
+                    <input
+                        type="password"
+                        name="password"
+                        placeholder="รหัสผ่าน"
+                        aria-label="รหัสผ่าน"
+                        autocomplete="current-password"
+                        required
+                    >
+                </div>
+
+                <div class="form-options">
+                    <button class="forgot-password" type="button" data-password-reset>ลืมรหัสผ่าน ?</button>
+                </div>
+
+                <button type="submit" class="login-button">เข้าสู่ระบบ</button>
+            </form>
+
+            <p class="auth-message" data-auth-message role="status" aria-live="polite"></p>
+            <button type="button" class="google-button" data-google-sign-in>เข้าสู่ระบบด้วย Google</button>
+            <p class="signup-link">ยังไม่มีบัญชี? <a href="sign.html">สมัครสมาชิก</a></p>
+        </section>
+    </main>
+    <script type="module" src="auth.js"></script>
+</body>
+</html>

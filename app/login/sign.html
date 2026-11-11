@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สมัครสมาชิก</title>
+    <link rel="stylesheet" href="stylesign.css">
+</head>
+<body>
+    <main class="login-card">
+        <div class="box1"></div>
+        <div class="card" aria-hidden="true"></div>
+        <section class="form-panel">
+            <h1>สมัครสมาชิก</h1>
+            <p class="subtitle">สร้างบัญชีใหม่เพื่อเข้าใช้งาน Dukdui</p>
+            <form data-auth-form="register">
+                <div class="fields">
+                    <input type="text" name="nickname" placeholder="ชื่อเล่น" aria-label="ชื่อเล่น" required>
+                    <input type="email" name="email" placeholder="อีเมล" aria-label="อีเมล" required>
+                    <input type="password" name="password" placeholder="รหัสผ่าน" aria-label="รหัสผ่าน" required>
+                    <input type="password" name="confirm-password" placeholder="ยืนยันรหัสผ่าน" aria-label="ยืนยันรหัสผ่าน" required>
+                </div>
+                <p class="password-hint">รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร และมีภาษาอังกฤษอย่างน้อย 1 ตัว</p>
+                <label class="terms">
+                    <input type="checkbox" name="terms" required>
+                    <span>ยอมรับเงื่อนไขการใช้งาน และ นโยบายความเป็นส่วนตัว</span>
+                </label>
+                <button type="submit" class="bt-login">สมัครสมาชิก</button>
+            </form>
+            <p class="auth-message" data-auth-message role="status" aria-live="polite"></p>
+            <button type="button" class="google-button" data-google-sign-in>สมัครสมาชิกด้วย Google</button>
+            <p class="textsign">มีบัญชีอยู่แล้ว ? <a href="login.html">เข้าสู่ระบบ</a></p>
+        </section>
+    </main>
+    <script type="module" src="auth.js"></script>
+</body>
+</html>

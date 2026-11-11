@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>บัญชีของฉัน - Dukdui</title>
+    <link rel="stylesheet" href="account.css">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <p class="auth-loading" data-auth-loading role="status">กำลังตรวจสอบบัญชี...</p>
+    <main class="account-page" data-account-page hidden>
+        <header class="page-header">
+            <a class="back-link" href="../home/homepage.html">← กลับหน้า Home</a>
+            <div>
+                <p class="eyebrow">DUKDUI SPU</p>
+                <h1>บัญชีของฉัน</h1>
+                <p class="subtitle">จัดการโปรไฟล์ ความสนใจ และความปลอดภัยของบัญชี</p>
+            </div>
+        </header>
+
+        <div class="account-grid">
+            <section class="account-card">
+                <h2>ข้อมูลโปรไฟล์</h2>
+                <p class="card-description">ข้อมูลนี้ใช้แสดงตัวตนของคุณใน Dukdui</p>
+                <form data-profile-form>
+                    <label class="field">
+                        <span>ชื่อที่แสดง</span>
+                        <input name="displayName" type="text" maxlength="80" autocomplete="nickname" required>
+                    </label>
+                    <label class="field">
+                        <span>อีเมล</span>
+                        <input name="email" type="email" readonly>
+                    </label>
+                    <label class="field">
+                        <span>แนะนำตัว</span>
+                        <textarea name="bio" rows="4" maxlength="280" placeholder="เล่าเกี่ยวกับตัวคุณสั้น ๆ (ไม่เกิน 280 ตัวอักษร)"></textarea>
+                    </label>
+                    <div class="field-row">
+                        <label class="field">
+                            <span>คณะ / สาขา</span>
+                            <input name="department" type="text" maxlength="100" placeholder="เช่น นิเทศศาสตร์">
+                        </label>
+                        <label class="field">
+                            <span>ชั้นปี</span>
+                            <select name="year">
+                                <option value="">ไม่ระบุ</option>
+                                <option value="ปี 1">ปี 1</option>
+                                <option value="ปี 2">ปี 2</option>
+                                <option value="ปี 3">ปี 3</option>
+                                <option value="ปี 4">ปี 4</option>
+                                <option value="ปี 5 ขึ้นไป">ปี 5 ขึ้นไป</option>
+                            </select>
+                        </label>
+                    </div>
+
+                    <fieldset class="tag-section">
+                        <legend>แท็กความสนใจ <span>(เลือกได้ไม่เกิน 10 แท็ก)</span></legend>
+                        <div class="preset-tags" data-preset-tags aria-label="แท็กแนะนำ"></div>
+                        <div class="custom-tag-entry">
+                            <label class="visually-hidden" for="custom-tag">เพิ่มแท็กเอง</label>
+                            <input id="custom-tag" type="text" maxlength="30" placeholder="พิมพ์แท็กที่สนใจ">
+                            <button type="button" class="secondary-button" data-add-tag>เพิ่มแท็ก</button>
+                        </div>
+                        <ul class="selected-tags" data-selected-tags aria-label="แท็กที่เลือก"></ul>
+                    </fieldset>
+                    <p class="form-message" data-profile-message role="status" aria-live="polite"></p>
+                    <button class="primary-button" type="submit" data-save-profile disabled>บันทึกโปรไฟล์</button>
+                </form>
+            </section>
+
+            <div class="account-side">
+                <section class="account-card account-details">
+                    <h2>รายละเอียดบัญชี</h2>
+                    <dl>
+                        <div><dt>วิธีเข้าสู่ระบบ</dt><dd data-provider-list>กำลังโหลด...</dd></div>
+                        <div><dt>สมัครเมื่อ</dt><dd data-created-at>กำลังโหลด...</dd></div>
+                        <div><dt>อีเมลยืนยันแล้ว</dt><dd data-email-verified>กำลังโหลด...</dd></div>
+                    </dl>
+                </section>
+
+                <section class="account-card password-card">
+                    <h2>เปลี่ยนรหัสผ่าน</h2>
+                    <p class="card-description" data-password-help>กรอกรหัสผ่านปัจจุบันและรหัสผ่านใหม่</p>
+                    <form data-password-form>
+                        <label class="field">
+                            <span>รหัสผ่านปัจจุบัน</span>
+                            <input name="currentPassword" type="password" autocomplete="current-password" required>
+                        </label>
+                        <label class="field">
+                            <span>รหัสผ่านใหม่</span>
+                            <input name="newPassword" type="password" autocomplete="new-password" minlength="6" required>
+                        </label>
+                        <label class="field">
+                            <span>ยืนยันรหัสผ่านใหม่</span>
+                            <input name="confirmPassword" type="password" autocomplete="new-password" minlength="6" required>
+                        </label>
+                        <p class="password-hint">อย่างน้อย 6 ตัวอักษร และมีภาษาอังกฤษอย่างน้อย 1 ตัว</p>
+                        <p class="form-message" data-password-message role="status" aria-live="polite"></p>
+                        <button class="primary-button" type="submit" data-change-password>เปลี่ยนรหัสผ่าน</button>
+                    </form>
+                </section>
+
+                <section class="account-card logout-card">
+                    <h2>ออกจากระบบ</h2>
+                    <p class="card-description">ออกจากระบบบนอุปกรณ์นี้</p>
+                    <p class="form-message" data-logout-message role="status" aria-live="polite"></p>
+                    <button class="danger-button" type="button" data-sign-out>ออกจากระบบ</button>
+                </section>
+            </div>
+        </div>
+    </main>
+    <script type="module" src="account.js"></script>
+</body>
+</html>
