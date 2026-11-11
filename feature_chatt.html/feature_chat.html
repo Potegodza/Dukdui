@@ -3,91 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dukdui SPU - แชทส่วนตัว</title>
+    <title>Chat</title>
     <link rel="stylesheet" href="feature_chat.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
+
 <body>
 
-
-                            <!-- 1 -->
     <div class="app-container">
-        <!-- แถบเมนูซ้าย -->
-        <aside class="sidebar">
-            <h2 class="logo">Dukdui SPU</h2>
+        <!-- แถบเมนูด้านซ้าย-->
+        <div class="sidebar">
+            <div>
+                <div class="logo">Dukdui SPU</div>
+                <ul class="menu-list">
+                    <li class="menu-btn active" data-target="sectionChat">
+                        <i data-lucide="message-square"></i> แชทส่วนตัว
+                    </li>
+                    <li class="menu-btn" data-target="sectionRandom">
+                        <i data-lucide="users-round"></i> สุ่มคุย
+                    </li>
+                    <li class="menu-btn" data-target="sectionProfile">
+                        <i data-lucide="user"></i> โปรไฟล์
+                    </li>
+                </ul>
+            </div>
 
-            <ul class="menu-list">
-                <li><i class="fa-solid fa-house"></i> หน้าแรก</li>
-                <li class="active"><i class="fa-solid fa-comment"></i> แชทส่วนตัว</li>
-                <li><i class="fa-solid fa-star"></i> แนะนำเรื่องเรียน</li>
-                <li><i class="fa-solid fa-book"></i> เทคนิคอ่านหนังสือสรุป</li>
-                <li><i class="fa-solid fa-file-lines"></i> ตัวอย่างการเรียน / Resume</li>
-                <li><i class="fa-solid fa-users"></i> สุ่มคุยแลกเปลี่ยนความคิด</li>
-            </ul>
+            <!-- ข้อมูลคนใช้ -->
             <div class="user-profile">
-                <div class="avatar"></div>
+                <div class="avatar online"></div>
                 <div class="user-info">
                     <span class="username">@csi69</span>
                     <span class="status">ออนไลน์</span>
                 </div>
-                <i class="fa-solid fa-gear settings-icon"></i>
             </div>
-        </aside>
+        </div>
 
-                            <!-- 2 -->
+        <!-- พื้นที่แสดงเนื้อหาหลัก -->
+        <div class="main-content">
 
-
-        <!--แชทหลัก-->
-        <main class="chat-main-area">
-
-        <!--รายชื่อกิ๊ก -->
-            <section class="chat-list-section">
-                <div class="search-box">
-                    <input type="text" id="searchInput" placeholder="ค้นหาชื่อโปรไฟล์เพื่อน @username ...">
-                </div>
-                <h3>แชทส่วนตัว</h3>
-
-                <div class="contact-list" id="contactList"></div>
-            </section>
-
-
-
-
-
-                        <!-- 3 -->
-
-        <!--หน้าต่างแชท-->
-            <section class="chat-window">
-                <div class="chat-header">
-                    <div class="avatar online" id="activeChatAvatar"></div>
-                    <div class="header-info">
-                        <span class="name" id="activeChatName">@csi69</span>
-                        <span class="status" id="activeChatStatus">ออนไลน์</span>
+            <!-- 1. แชทส่วนตัว -->
+            <section id="sectionChat" class="app-section active">
+                <div class="chat-list-pane">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="ค้นหาชื่อเพื่อนหรือคีย์เวิร์ด...">
+                    </div>
+                    <h3>รายชื่อเพื่อน</h3>
+                    <div class="contact-list" id="contactList">
+                  
                     </div>
                 </div>
 
-                <!-- กล่องแสดงข้อความ-->
-                <div class="chat-messages" id="chatMessages"></div>
+                <div class="chat-window-pane">
+                    <div class="chat-header">
+                        <div class="avatar" id="activeAvatar"></div>
+                        <div class="header-info">
+                            <span class="name" id="activeChatName">เลือกเพื่อนเพื่อเริ่มแชท</span>
+                            <span class="status" id="activeChatStatus">ออฟไลน์</span>
+                        </div>
+                        <button class="video-call-btn" id="videoCallBtn">
+                            <i data-lucide="video"></i> เปิดกล้อง
+                        </button>
+                    </div>
 
-                <!-- กล่องพิมพ์ข้อความ -->
-                <div class="chat-input-area">
-                    <input type="text" id="messageInput" placeholder="พิมพ์ข้อความ...">
-                    <button id="sendBtn"><i class="fa-solid fa-paper-plane"></i></button>
+                    <div class="chat-messages" id="chatMessages">
+                        <div style="color: #64748b; text-align: center; margin-top: auto; margin-bottom: auto;">
+                            ยังไม่ได้เลือกบทสนทนา
+                        </div>
+                    </div>
+
+                    <div class="chat-input-area">
+                        <input type="text" id="messageInput" placeholder="พิมพ์ข้อความของคุณ..." disabled>
+                        <button id="sendBtn"><i data-lucide="send"></i></button>
+                    </div>
                 </div>
             </section>
-        </main>
+
+            <!-- 2. สุ่มแชท -->
+            <section id="sectionRandom" class="app-section">
+                <div class="center-card-container">
+                    <div class="card-box">
+                      
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3. โปรไฟล์ -->
+            <section id="sectionProfile" class="app-section">
+                <div class="center-card-container">
+                    <div class="card-box">
+                    
+                    </div>
+                </div>
+            </section>
+
+        </div>
     </div>
 
+    <!-- Modal หน้าต่างจำลองวิดีโอคอล -->
+    <div class="video-modal" id="videoModal">
+        <div class="video-modal-content">
+            <div class="video-screen">
+                <i data-lucide="video" style="width: 40px; height: 40px;"></i>
+                <span>กำลังเชื่อมต่อวิดีโอคอล...</span>
+            </div>
+            <button class="close-video-btn" id="closeVideoBtn">วางสาย / ปิดกล้อง</button>
+        </div>
+    </div>
 
-
-
-
-
-
-
-
-
-
+    
     <script src="feature_chat.js"></script>
+    
+  
+    <script>
+        lucide.createIcons();
+    </script>
 </body>
 </html>

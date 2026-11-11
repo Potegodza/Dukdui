@@ -1,175 +1,187 @@
-let chatsData = [
-    {
-        id: 1,
-        name: "@งดทักยืมตังค์_Devvy",
-        status: "ออนไลน์",
-        time: "23:07",
+// 1. โหลดข้อมูลจาก localStorage (ถ้ามี) หรือใช้ข้อมูลเริ่มต้นถ้ายังไม่เคยมี
+let contactsData = JSON.parse(localStorage.getItem('chatContactsData')) || [
+    { 
+        id: 1, 
+        name: "Bell", 
+        status: "ออนไลน์", 
+        lastMsg: "สวัสดีค่ะ", 
+        time: "10:30 น.",
         messages: [
-            { sender: "incoming", text: "สวัสดีครับ java ที่ผมเคยช่วยคุณไปเป็นยังไงบ้าง?", time: "23:00" },
-            { sender: "outgoing", text: "แอบยากนิดหน่อย แต่กำลังฝึกอยู่ครับ", time: "23:10" }
-            
+            { sender: "incoming", text: "สวัสดีค่ะ", time: "10:30 น." }
         ]
     },
-    {
-        id: 2,
-        name: "@เทพไม่รวมกลุ่ม_และไม่ทำงานด้วย",
-        status: "ออฟไลน์",
-        time: "21:15",
+    { 
+        id: 2, 
+        name: "L i v a n", 
+        status: "ออฟไลน์", 
+        lastMsg: "หาคนไปกินตี๋น้อยอยู่ แกไปป่ะ?", 
+        time: "เมื่อวาน",
         messages: [
-            { sender: "incoming", text: "พี่ สอนเขียนโปรแกรมให้หน่อยคับ", time: "21:10" },
-            { sender: "outgoing", text: "เอาไว้ทำโปรเจคเสร็จเดี๋ยวสอนให้ แต่พี่ยังได้แค่พื้นฐานนะ", time: "21:15" } ,
-            { sender: "incoming", text: "ขอบคุณครับ", time: "21:21" },
-            
+            { sender: "incoming", text: "หาคนไปกินตี๋น้อยอยู่ แกไปป่ะ?", time: "เมื่อวาน" }
         ]
     },
-    {
-        id: 3,
-        name: "@Anucha_spu",
-        status: "ออนไลน์",
-        time: "19:40",
+    { 
+        id: 3, 
+        name: "Ahaahaha", 
+        status: "ออนไลน์", 
+        lastMsg: "เย็นนี้ไปกินข้าวกัน โดนเพื่อนบิดมา", 
+        time: "09:15 น.",
         messages: [
-            { sender: "incoming", text: "พรุ่งนี้เจอกันกี่โมงครับ", time: "19:40" }
+            { sender: "incoming", text: "เย็นนี้ไปกินข้าวกัน โดนเพื่อนบิดมา", time: "09:15 น." }
+        ]
+    },
+    { 
+        id: 4, 
+        name: "เทพไม่รวมกลุ่ม", 
+        status: "ออฟไลน์", 
+        lastMsg: "ขอบคุณที่เอาหนังสือไปคืนให้นะครับ", 
+        time: "จันทร์",
+        messages: [
+            { sender: "incoming", text: "ขอบคุณที่เอาหนังสือไปคืนให้นะครับ", time: "จันทร์" }
         ]
     }
 ];
 
-//เก็บIDแชท
-let currentChatId = 1;
+let currentActiveContactId = null;
 
+// ฟังก์ชันสำหรับบันทึกข้อมูลลงในหน่วยความจำของเบราว์เซอร์
+function saveToLocalStorage() {
+    localStorage.setItem('chatContactsData', JSON.stringify(contactsData));
+}
 
+// ระบบเปลี่ยนหน้าแท็บเมนูด้านซ้าย
+const menuBtns = document.querySelectorAll('.menu-btn');
+const appSections = document.querySelectorAll('.app-section');
+
+menuBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+        menuBtns.forEach(b => b.classList.remove('active'));
+        appSections.forEach(s => s.classList.remove('active'));
+
+        btn.classList.add('active');
+        const targetId = btn.getAttribute('data-target');
+        document.getElementById(targetId).classList.add('active');
+    });
+});
+
+// แสดงรายชื่อเพื่อน
 const contactListEl = document.getElementById('contactList');
-const chatMessagesEl = document.getElementById('chatMessages');
-const activeChatNameEl = document.getElementById('activeChatName');
-const activeChatStatusEl = document.getElementById('activeChatStatus');
-const activeChatAvatarEl = document.getElementById('activeChatAvatar');
-const messageInput = document.getElementById('messageInput');
-const sendBtn = document.getElementById('sendBtn');
-const searchInput = document.getElementById('searchInput');
 
-
-
-
-//ฟังก์ชันเรนเดอร์รายชื่อเพื่อน
-function renderContacts(filterText = "") {
-    contactListEl.innerHTML = "";
-
-    const filteredChats = chatsData.filter(chat => 
-        chat.name.toLowerCase().includes(filterText.toLowerCase())
-    );
-
-    if (filteredChats.length === 0) {
-        contactListEl.innerHTML = `<p style="color: #64748b; font-size: 12px; padding: 10px; text-align: center;">ไม่พบชื่อผู้ใช้งาน</p>`;
+function renderContacts(list) {
+    contactListEl.innerHTML = '';
+    if (list.length === 0) {
+        contactListEl.innerHTML = '<div style="color: #64748b; font-size: 12px; text-align: center; padding: 20px;">ไม่พบรายชื่อเพื่อน</div>';
         return;
     }
 
-    filteredChats.forEach(chat => {
-        const lastMsg = chat.messages.length > 0 ? chat.messages[chat.messages.length - 1].text : "";
-        
-        const contactDiv = document.createElement('div');
-        contactDiv.classList.add('contact-item');
-        if (chat.id === currentChatId) {
-            contactDiv.classList.add('active');
-        }
-
-        contactDiv.innerHTML = `
-            <div class="avatar online"></div>
+    list.forEach(contact => {
+        const item = document.createElement('div');
+        item.className = `contact-item ${currentActiveContactId === contact.id ? 'active' : ''}`;
+        item.innerHTML = `
+            <div class="avatar ${contact.status === 'ออนไลน์' ? 'online' : ''}"></div>
             <div class="contact-details">
-                <span class="name">${chat.name}</span>
-                <span class="last-msg">${lastMsg}</span>
+                <span class="name">${contact.name}</span>
+                <span class="last-msg">${contact.lastMsg}</span>
             </div>
-            <span class="time">${chat.time}</span>
+            <span class="time">${contact.time}</span>
         `;
-
-        //กดสลับแชท
-        contactDiv.addEventListener('click', () => {
-            currentChatId = chat.id;
-            renderContacts(searchInput.value);
-            renderChatWindow();
-        });
-
-        contactListEl.appendChild(contactDiv);
+        item.addEventListener('click', () => selectContact(contact));
+        contactListEl.appendChild(item);
     });
 }
 
-//แสดงหน้าแชท
-function renderChatWindow() {
-    const currentChat = chatsData.find(chat => chat.id === currentChatId);
-    if (!currentChat) return;
+// เลือกเพื่อนเพื่อเปิดห้องแชท
+function selectContact(contact) {
+    currentActiveContactId = contact.id;
+    renderContacts(contactsData); 
 
-    //อัปเดตข้อมูลหัวข้อแชทฝขวา
-    activeChatNameEl.textContent = currentChat.name;
-    activeChatStatusEl.textContent = currentChat.status;
+    document.getElementById('activeChatName').textContent = contact.name;
+    document.getElementById('activeChatStatus').textContent = contact.status;
+    document.getElementById('messageInput').disabled = false;
+
+    const chatMessages = document.getElementById('chatMessages');
+    chatMessages.innerHTML = '';
     
-    if (currentChat.status === "ออนไลน์") {
-        activeChatAvatarEl.classList.add('online');
-    } else {
-        activeChatAvatarEl.classList.remove('online');
-    }
-
-    //ล้าง-เติมข้อความในกล่องแชท
-    chatMessagesEl.innerHTML = "";
-    currentChat.messages.forEach(msg => {
+    // แสดงประวัติแชททั้งหมด
+    contact.messages.forEach(msg => {
         const msgDiv = document.createElement('div');
-        msgDiv.classList.add('message', msg.sender);
+        msgDiv.className = `message ${msg.sender}`;
         msgDiv.innerHTML = `
-            <p>${escapeHtml(msg.text)}</p>
+            ${msg.text}
             <span class="msg-time">${msg.time}</span>
         `;
-        chatMessagesEl.appendChild(msgDiv);
+        chatMessages.appendChild(msgDiv);
     });
-
-    //เลื่อนลงล่าง
-    chatMessagesEl.scrollTop = chatMessagesEl.scrollHeight;
+    chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
-//ส่งข้อความใหม่
+// ค้นหาชื่อเพื่อน,ข้อความ
+const searchInput = document.getElementById('searchInput');
+searchInput.addEventListener('input', (e) => {
+    const keyword = e.target.value.toLowerCase();
+    const filtered = contactsData.filter(contact => {
+        const matchName = contact.name.toLowerCase().includes(keyword);
+        const matchMessage = contact.messages.some(msg => msg.text.toLowerCase().includes(keyword));
+        return matchName || matchMessage;
+    });
+    renderContacts(filtered);
+});
+
+// ส่งข้อความ
+const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+const chatMessages = document.getElementById('chatMessages');
+
 function sendMessage() {
     const text = messageInput.value.trim();
-    if (text === "") return;
+    if (text === '' || currentActiveContactId === null) return;
 
-    const now = new Date();
-    const timeString = now.getHours().toString().padStart(2, '0') + ':' + 
-                       now.getMinutes().toString().padStart(2, '0');
+    const currentContact = contactsData.find(c => c.id === currentActiveContactId);
 
-    const currentChat = chatsData.find(chat => chat.id === currentChatId);
-    if (currentChat) {
-        //บันทึกข้อความลงในข้อมูลแชท
-        currentChat.messages.push({
-            sender: "outgoing",
-            text: text,
-            time: timeString
-        });
-        currentChat.time = timeString;
-    }
+    // เพิ่มข้อความใหม่เข้าไปในอาเรย์ของเพื่อน
+    const newMsg = { sender: "outgoing", text: text, time: "เมื่อสักครู่" };
+    currentContact.messages.push(newMsg);
+    currentContact.lastMsg = text;
+    currentContact.time = "เมื่อสักครู่";
 
-    messageInput.value = "";
-    renderChatWindow();
-    renderContacts(searchInput.value);
+    // บันทึกข้อมูลในlocalStorage
+    saveToLocalStorage();
+
+    // แสดงผลข้อความ
+    const msgDiv = document.createElement('div');
+    msgDiv.className = 'message outgoing';
+    msgDiv.innerHTML = `
+        ${text}
+        <span class="msg-time">เมื่อสักครู่</span>
+    `;
+    chatMessages.appendChild(msgDiv);
+    messageInput.value = '';
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    
+    renderContacts(contactsData);
 }
 
-//XSS 
-function escapeHtml(unsafe) {
-    return unsafe
-         .replace(/&/g, "&amp;")
-         .replace(/</g, "&lt;")
-         .replace(/>/g, "&gt;")
-         .replace(/"/g, "&quot;")
-         .replace(/'/g, "&#039;");
-}
-
-//พิมพค้นหา
-searchInput.addEventListener('input', (e) => {
-    renderContacts(e.target.value);
-});
-
-//ส่งข้อความใส่คีย์enterไว้ด้วย
 sendBtn.addEventListener('click', sendMessage);
 messageInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-        sendMessage();
-    }
+    if (e.key === 'Enter') sendMessage();
 });
 
-//เริ่มโหลดหน้าเว็บครั้ง1 ถ้าไม่จำเป็นก็ลบออก
-renderContacts();
-renderChatWindow();
+// เปิด/ปิดหน้าต่างวิดีโอคอล
+const videoModal = document.getElementById('videoModal');
+const videoCallBtn = document.getElementById('videoCallBtn');
+const closeVideoBtn = document.getElementById('closeVideoBtn');
+
+videoCallBtn.addEventListener('click', () => {
+    if (currentActiveContactId === null) {
+        alert('กรุณาเลือกเพื่อนในแชทส่วนตัวก่อนเปิดกล้องโทร');
+        return;
+    }
+    videoModal.style.display = 'flex';
+});
+
+closeVideoBtn.addEventListener('click', () => {
+    videoModal.style.display = 'none';
+});
+
+// โหลดรายชื่อเพื่อน
+renderContacts(contactsData);
