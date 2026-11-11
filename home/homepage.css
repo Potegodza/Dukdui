@@ -1,0 +1,421 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+/* รูปแบบพื้นฐานของหน้าเว็บ */
+body {
+    font-family: 'IBM Plex Sans Thai', sans-serif;
+    background-color: #0b1020;
+    color: #f5f6fa;
+}
+/* โครงสร้างหลัก แบ่งเป็น 3 คอลัมน์ */
+.dashboard {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr) 265px;
+    min-height: 100vh;
+}
+/* แถบเมนูซ้าย */
+.sidebar {
+    background-color: #0d1324;
+    border-right: 1px solid #20283a;
+    padding: 22px 8px;
+    display: flex;
+    flex-direction: column;
+}
+.logo {
+    font-size: 25px;
+    font-weight: 500;
+    text-align: center;
+    margin-bottom: 40px;
+}
+.logo span {
+    color: #3978ff;
+}
+/* รายการเมนู */
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.menu-item {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 16px;
+    color: #e1e5ef;
+    text-decoration: none;
+    border-radius: 10px;
+    font-size: 14px;
+}
+.menu-item i {
+    width: 26px;
+    height: 26px;
+    stroke-width: 1.8;
+    flex-shrink: 0;
+}
+.menu-item:hover, .menu-item.active {
+    background-color: #17316b;
+}
+/* โปรไฟล์ผู้ใช้ด้านล่าง */
+.profile {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: auto;
+    padding: 12px 8px;
+}
+.avatar, .online-avatar {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background-color: #d9dce3;
+}
+.avatar {
+    width: 38px;
+    height: 38px;
+}
+.profile-info p, .online-user p {
+    font-size: 13px;
+}
+.profile-info small, .online-user small {
+    display: block;
+    color: #9299aa;
+    font-size: 10px;
+}
+.settings {
+    margin-left: auto;
+    font-size: 19px;
+}
+/* พื้นที่ตรงกลาง */
+.main-content {
+    min-width: 0;
+}
+/* แถบค้นหาด้านบน */
+.topbar {
+    height: 74px;
+    padding: 0 28px;
+    border-bottom: 1px solid #20283a;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+}
+.topbar input {
+    width: min(65%, 465px);
+    height: 34px;
+    padding: 0 18px;
+    border: none;
+    outline: none;
+    border-radius: 20px;
+    background-color: #1a2030;
+    color: white;
+    font-family: inherit;
+}
+.topbar input::placeholder {
+    color: #9299aa;
+    font-size: 11px;
+}
+.topbar-name {
+    font-size: 12px;
+}
+/* เนื้อหาหลักตรงกลาง */
+.content {
+    max-width: none;
+    width: 100%;
+    margin: 22px 0;
+    padding: 0 35px;
+}
+/* กล่องต้อนรับ */
+.welcome {
+    background-color: #191f30;
+    padding: 24px 35px 18px;
+    border-radius: 17px;
+    margin-bottom: 15px;
+}
+.welcome h2 {
+    font-size: 23px;
+    font-weight: 400;
+}
+.welcome h1 {
+    font-size: 29px;
+    font-weight: 500;
+    margin-bottom: 5px;
+}
+.welcome p {
+    font-size: 14px;
+    line-height: 1.5;
+    color: #e0e3eb;
+    margin-bottom: 16px;
+}
+.start-button, .random-button {
+    display: inline-block;
+    background-color: #3978f6;
+    color: white;
+    text-decoration: none;
+    text-align: center;
+    border-radius: 9px;
+    padding: 7px 38px;
+    font-size: 13px;
+}
+.start-button {
+    font-size: 15px;
+}
+.start-button:hover, .random-button:hover {
+    background-color: #2863dc;
+}
+/* กล่องหมวดหมู่ */
+.categories {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 7px;
+    margin-bottom: 20px;
+}
+.category {
+    min-height: 102px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 8px;
+    text-decoration: none;
+    color: #182033;
+    font-size: 12px;
+    transition: transform 0.2s;
+}
+.category:hover {
+    transform: translateY(-4px);
+}
+.purple { background-color: #a47cf5; }
+.green  { background-color: #8cf5a5; }
+.yellow { background-color: #f0fa91; }
+.pink   { background-color: #f68e99; }
+.blue   { background-color: #91b5f7; }
+/* ส่วนโพสต์ล่าสุด */
+.latest-posts h3 {
+    font-size: 16px;
+    font-weight: 400;
+    margin-bottom: 12px;
+}
+.post {
+    background-color: #111827;
+    border: 1px solid #20283a;
+    border-radius: 8px;
+    padding: 10px;
+}
+.post-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.small-avatar {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: #d9dce3;
+    flex-shrink: 0;
+}
+.post-user p {
+    font-size: 14px;
+    margin: 0;
+}
+.post-user small {
+    display: block;
+    color: #9299aa;
+    font-size: 12px;
+    margin-top: 2px;
+}
+.post-text {
+    font-size: 13px;
+    margin: 8px 0;
+}
+.post-tags {
+    display: flex;
+    gap: 6px;
+}
+.post-tags span {
+    background-color: #17316b;
+    color: #b9d0ff;
+    border-radius: 4px;
+    padding: 2px 7px;
+    font-size: 11px;
+}
+/* แถบด้านขวา */
+.right-sidebar {
+    background-color: #0d1324;
+    border-left: 1px solid #20283a;
+    padding: 16px 20px;
+}
+.online-heading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 17px;
+}
+.online-heading h3 {
+    font-size: 13px;
+    font-weight: 400;
+}
+.online-heading a {
+    font-size: 10px;
+    color: #9299aa;
+    text-decoration: none;
+}
+/* รายชื่อเพื่อนออนไลน์ */
+.online-list {
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+}
+.online-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.online-avatar {
+    width: 29px;
+    height: 29px;
+}
+/* กล่องสุ่มคุย */
+.random-box {
+    background-color: #191f30;
+    padding: 15px;
+    border-radius: 12px;
+    margin-top: 25px;
+}
+.random-box h3 {
+    font-size: 14px;
+    font-weight: 400;
+    margin-bottom: 5px;
+}
+.random-box p {
+    font-size: 11px;
+    color: #aab1c0;
+    line-height: 1.6;
+    margin-bottom: 10px;
+}
+.random-button {
+    padding: 5px 25px;
+    border-radius: 3px;
+}
+/* ปรับหน้าเว็บสำหรับหน้าจอขนาดเล็ก */
+@media (max-width: 950px) {
+    .dashboard {
+        grid-template-columns: 220px minmax(0, 1fr);
+    }
+    .right-sidebar {
+        display: none;
+    }
+}
+@media (max-width: 650px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+    .sidebar {
+        padding: 15px;
+    }
+    .logo {
+        margin-bottom: 15px;
+    }
+    .menu {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .profile {
+        display: none;
+    }
+    .topbar {
+        padding: 0 15px;
+    }
+    .content {
+        padding: 0 15px;
+    }
+    .welcome {
+        padding: 20px;
+    }
+    .categories {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+/* กล่องประกาศ */
+.announcement {
+    width: 100%;
+    margin: 15px 0 0;
+    background-color: #191f30;
+    border-radius: 17px;
+    padding: 24px 35px 18px;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+/* หัวข้อประกาศ */
+.announcement-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.announcement-header h3 {
+    font-size: 18px;
+    color: #f5f6fa;
+    margin: 0;
+}
+
+.announcement-header span {
+    font-size: 11px;
+    color: #91b5ff;
+    letter-spacing: 1px;
+}
+
+/* พื้นที่เลื่อนประกาศ */
+.announcement-slider {
+    width: 100%;
+    overflow: hidden;
+    border-radius: 10px;
+}
+
+.announcement-track {
+    display: flex;
+    transition: transform 0.6s ease-in-out;
+}
+/* แต่ละประกาศ */
+.announcement-item {
+    min-width: 100%;
+    box-sizing: border-box;
+}
+.announcement-item img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 5 / 2;
+    object-fit: cover;
+    border-radius: 10px;
+}
+/* จุดบอกตำแหน่ง */
+.announcement-dots {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 15px;
+}
+.dot {
+    width: 8px;
+    height: 8px;
+    background: #ccc;
+    border-radius: 50%;
+    transition: 0.3s;
+}
+.dot.active {
+    width: 22px;
+    background: #477FA1;
+    border-radius: 10px;
+}
+
+@media (max-width: 650px) {
+    .announcement {
+        padding: 20px;
+    }
+}
