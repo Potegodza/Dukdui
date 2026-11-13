@@ -1,0 +1,94 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>สุ่มคุยแลกเปลี่ยนความคิด | Dukdui SPU</title>
+    <link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/random-discussions.css">
+</head>
+<body>
+
+    <aside class="sidebar">
+    <h2 class="logo">Dukdui SPU</h2>
+
+    <ul class="menu-list">
+        <li>
+            <i class="fa-solid fa-house"></i>
+            หน้าแรก
+        </li>
+
+        <li>
+            <i class="fa-solid fa-comment"></i>
+            แชทส่วนตัว
+        </li>
+
+        <li class="active">
+            <i class="fa-solid fa-users"></i>
+            สุ่มคุยแลกเปลี่ยนความคิด
+        </li>
+    </ul>
+
+    <div class="user-profile">
+        <div class="avatar"></div>
+
+        <div>
+            <span class="username">@csi69</span>
+            <span class="status">ออนไลน์</span>
+        </div>
+    </div>
+</aside>
+
+    <main class="main-content">
+        <section class="content">
+            <h1>สุ่มคุยแลกเปลี่ยนความคิด</h1>
+            <p class="subtitle">เลือกหัวข้อที่คุณสนใจ เพื่อพบเพื่อนใหม่และแลกเปลี่ยนความคิดเห็น</p>
+
+            <div class="topic-grid">
+
+                <button class="topic-card" data-topic="study">
+                    <span class="topic-icon">📚</span>
+                    <h3>เรื่องเรียน / การสอบ</h3>
+                    <p>พูดคุยเกี่ยวกับการเรียน การสอบ และการทำงานกลุ่ม</p>
+                </button>
+
+                <button class="topic-card" data-topic="university">
+                    <span class="topic-icon">🎓</span>
+                    <h3>การใช้ชีวิตในมหาลัย</h3>
+                    <p>แชร์ประสบการณ์และเรื่องราวในรั้วมหาวิทยาลัย</p>
+                </button>
+
+                <button class="topic-card" data-topic="career">
+                    <span class="topic-icon">💼</span>
+                    <h3>อาชีพ / อนาคต</h3>
+                    <p>แลกเปลี่ยนความคิดเกี่ยวกับอาชีพและเป้าหมาย</p>
+                </button>
+
+                <button class="topic-card" data-topic="technology">
+                    <span class="topic-icon">💻</span>
+                    <h3>เทคโนโลยี / เกม</h3>
+                    <p>พูดคุยเรื่องเทคโนโลยี เกม และนวัตกรรม</p>
+                </button>
+
+                <button class="topic-card" data-topic="lifestyle">
+                    <span class="topic-icon">☕</span>
+                    <h3>เรื่องทั่วไป / ไลฟ์สไตล์</h3>
+                    <p>พูดคุยเรื่องทั่วไป งานอดิเรก และไลฟ์สไตล์</p>
+                </button>
+
+            </div>
+
+            <button id="startMatching" disabled>
+                เริ่มสุ่มคุย
+            </button>
+
+            <p id="message">กรุณาเลือกหัวข้อที่สนใจ 1 หัวข้อ</p>
+        </section>
+    </main>
+
+    <script src="/js/random-discussions.js"></script>
+</body>
+</html>
