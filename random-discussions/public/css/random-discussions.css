@@ -1,0 +1,269 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Prompt", sans-serif;
+    background: #091020;
+    color: #ffffff;
+    min-height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    background: #0f172a;
+    border-right: 1px solid #1e293b;
+    padding: 30px 20px;
+}
+
+.logo {
+    color: #38bdf8;
+    font-size: 28px;
+    margin-bottom: 70px;
+}
+
+.menu {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.menu a {
+    display: block;
+    padding: 18px 16px;
+    border-radius: 14px;
+    color: #94a3b8;
+    text-decoration: none;
+    font-size: 17px;
+    transition: 0.2s;
+}
+
+.menu a:hover,
+.menu a.active {
+    background: #1e293b;
+    color: #ffffff;
+}
+
+/* Main content */
+.main-content {
+    margin-left: 260px;
+    padding: 55px 45px;
+}
+
+.content {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.content h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #94a3b8;
+    font-size: 16px;
+    margin-bottom: 35px;
+}
+
+/* Topic cards */
+.topic-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.topic-card {
+    background: #111c32;
+    border: 2px solid #26344d;
+    border-radius: 18px;
+    padding: 25px;
+    color: #ffffff;
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.topic-card:hover {
+    border-color: #6366f1;
+    transform: translateY(-3px);
+    background: #17243d;
+}
+
+.topic-card.selected {
+    border-color: #6366f1;
+    background: #20264c;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.topic-icon {
+    display: block;
+    font-size: 34px;
+    margin-bottom: 15px;
+}
+
+.topic-card h3 {
+    font-size: 19px;
+    margin-bottom: 8px;
+}
+
+.topic-card p {
+    color: #94a3b8;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+/* Start button */
+#startMatching {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    margin: 35px auto 0;
+    padding: 17px 25px;
+    border: none;
+    border-radius: 999px;
+    background: #5b5bff;
+    color: white;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+#startMatching:hover:not(:disabled) {
+    background: #4949e8;
+    transform: translateY(-2px);
+}
+
+#startMatching:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+#message {
+    margin-top: 18px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .sidebar {
+        position: relative;
+        width: 100%;
+        height: auto;
+        padding: 15px;
+    }
+
+    .logo {
+        margin-bottom: 15px;
+    }
+
+    .menu {
+        gap: 5px;
+    }
+
+    .menu a {
+        padding: 12px;
+        font-size: 14px;
+    }
+
+    .main-content {
+        margin-left: 0;
+        padding: 30px 18px;
+    }
+
+    .content h1 {
+        font-size: 25px;
+    }
+
+    .topic-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100vh;
+    background: #0f172a;
+    border-right: 1px solid #1e293b;
+    padding: 24px 16px;
+    display: flex;
+    flex-direction: column;
+}
+
+.logo {
+    color: #38bdf8;
+    margin-bottom: 30px;
+    padding-left: 10px;
+}
+
+.menu-list {
+    list-style: none;
+    flex-grow: 1;
+}
+
+.menu-list li {
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.menu-list li i {
+    margin-right: 10px;
+}
+
+.menu-list li:hover,
+.menu-list li.active {
+    background: #1e293b;
+    color: #fff;
+}
+
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 16px;
+    border-top: 1px solid #1e293b;
+}
+
+.avatar {
+    width: 36px;
+    height: 36px;
+    background: #cbd5e1;
+    border-radius: 50%;
+}
+
+.username {
+    font-size: 13px;
+    font-weight: 600;
+    display: block;
+}
+
+.status {
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.main-content {
+    margin-left: 260px;
+    padding: 24px 20px;
+}

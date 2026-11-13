@@ -1,0 +1,710 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dukdui SPU</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <script>
+        // ป้องกันการเข้าหน้าสุ่มคุยโดยยังไม่ได้เลือกหมวดหมู่
+        // ตรวจตั้งแต่ก่อนโหลดกล้องและ Socket.IO
+        (() => {
+            const allowedTopics = [
+                'study', 'university', 'career', 'technology', 'lifestyle'
+            ];
+            const selectedTopic = sessionStorage.getItem('selectedTopic');
+
+            if (!allowedTopics.includes(selectedTopic)) {
+                sessionStorage.removeItem('selectedTopic');
+                window.location.replace('/random-discussions.html?required=1');
+            }
+        })();
+    </script>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: #091020;
+            color: #fff;
+            font-family: "Prompt", sans-serif;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 260px;
+            height: 100vh;
+            background: #0f172a;
+            border-right: 1px solid #1e293b;
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .logo {
+            color: #38bdf8;
+            margin-bottom: 30px;
+            padding-left: 10px;
+        }
+
+        .menu-list {
+            list-style: none;
+            flex-grow: 1;
+        }
+
+        .menu-list li {
+            padding: 12px 16px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            color: #94a3b8;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .menu-list li i {
+            margin-right: 10px;
+        }
+
+        .menu-list li:hover,
+        .menu-list li.active {
+            background: #1e293b;
+            color: #fff;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-top: 16px;
+            border-top: 1px solid #1e293b;
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            background: #cbd5e1;
+            border-radius: 50%;
+        }
+
+        .username {
+            font-size: 13px;
+            font-weight: 600;
+            display: block;
+        }
+
+        .status {
+            font-size: 11px;
+            color: #94a3b8;
+        }
+
+        /* Main content */
+        .main-content {
+            margin-left: 260px;
+            padding: 24px 20px;
+        }
+
+        .box {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .box h2 {
+            margin-bottom: 16px;
+        }
+
+        /* Video */
+        .stage {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
+            border: 1px solid #1e293b;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        #other {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        #me {
+            position: absolute;
+            right: 16px;
+            bottom: 16px;
+            width: 25%;
+            border-radius: 12px;
+            border: 2px solid #fff;
+            transform: scaleX(-1);
+        }
+
+        #status {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            color: #cfd6e4;
+            background: rgba(9, 16, 32, 0.85);
+        }
+
+        /* Buttons */
+        .buttons {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 18px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 999px;
+            padding: 12px 24px;
+            font-family: inherit;
+            font-size: 15px;
+            color: #fff;
+            background: #5b5bff;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        button:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+        }
+
+        #leave {
+            background: #ef4444;
+        }
+
+        #report {
+            background: #f59e0b;
+        }
+
+        /* Report modal */
+        .report-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            background: rgba(0, 0, 0, 0.75);
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .report-box {
+            width: 100%;
+            max-width: 420px;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 24px;
+        }
+
+        .report-box h2 {
+            margin-bottom: 8px;
+        }
+
+        .report-box p {
+            color: #94a3b8;
+            margin-bottom: 18px;
+        }
+
+        .report-box select,
+        .report-box textarea {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 14px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            background: #091020;
+            color: white;
+            font-family: inherit;
+            font-size: 14px;
+        }
+
+        .report-box textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .report-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        #cancelReport {
+            background: #475569;
+        }
+
+        #submitReport {
+            background: #ef4444;
+        }
+
+        @media (max-width: 700px) {
+            .sidebar {
+                width: 200px;
+            }
+
+            .main-content {
+                margin-left: 200px;
+            }
+
+            .buttons button {
+                padding: 10px 16px;
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div>
+            <h2 class="logo">Dukdui SPU</h2>
+
+            <ul class="menu-list">
+                <li>
+                    <i class="fa-solid fa-house"></i>
+                    หน้าแรก
+                </li>
+
+                <li>
+                    <i class="fa-solid fa-comment"></i>
+                    แชทส่วนตัว
+                </li>
+
+                <li class="active">
+                    <i class="fa-solid fa-users"></i>
+                    สุ่มคุยแลกเปลี่ยนความคิด
+                </li>
+            </ul>
+        </div>
+
+        <div class="user-profile">
+            <div class="avatar"></div>
+
+            <div>
+                <span class="username">@csi69</span>
+                <span class="status">ออนไลน์</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+        <div class="box">
+
+            <h2>สุ่มคุยแลกเปลี่ยนความคิด</h2>
+
+            <div class="stage">
+                <video id="other" autoplay playsinline></video>
+                <video id="me" autoplay muted playsinline></video>
+                <div id="status">กำลังเปิดกล้อง...</div>
+            </div>
+
+            <div class="buttons">
+                <button id="start" disabled>เริ่มสุ่มจับคู่</button>
+                <button id="next" disabled>ถัดไป</button>
+                <button id="report" disabled>⚑ รายงาน</button>
+                <button id="leave" disabled>ออก</button>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Report modal -->
+    <div id="reportModal" class="report-modal">
+        <div class="report-box">
+
+            <h2>รายงานผู้ใช้งาน</h2>
+            <p>กรุณาเลือกเหตุผลที่ต้องการรายงาน</p>
+
+            <select id="reportReason">
+                <option value="">-- เลือกเหตุผล --</option>
+                <option value="harassment">คุกคาม / ล่วงละเมิด</option>
+                <option value="inappropriate">พฤติกรรมไม่เหมาะสม</option>
+                <option value="sexual">เนื้อหาทางเพศ</option>
+                <option value="spam">สแปม / โฆษณา</option>
+                <option value="violence">ข่มขู่ / ใช้ความรุนแรง</option>
+                <option value="other">อื่น ๆ</option>
+            </select>
+
+            <textarea
+                id="reportDetail"
+                placeholder="รายละเอียดเพิ่มเติม (ไม่บังคับ)"
+            ></textarea>
+
+            <div class="report-actions">
+                <button id="cancelReport">ยกเลิก</button>
+                <button id="submitReport">ส่งรายงาน</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+        const config = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' }
+            ]
+        };
+
+        // เชื่อมกับระบบ Login/Profile ของทีม
+        // ตอนพัฒนาใช้ mock UID นี้ชั่วคราว หากระบบ Profile พร้อมแล้ว
+        // ให้เพื่อนกำหนด window.currentUser = { uid: 'รหัสผู้ใช้ที่ยืนยันแล้ว' }
+        // ก่อนโหลดสคริปต์หน้านี้ แล้วลบ mock ด้านล่างออก
+        window.currentUser = window.currentUser || { uid: '69012345' };
+
+        const socket = io();
+        let identified = false;
+        let userUid = '';
+
+        function identifyUser() {
+            userUid = String(window.currentUser?.uid || '').trim();
+            if (!/^\d{8}$/.test(userUid)) {
+                identified = false;
+                startBtn.disabled = true;
+                showStatus('ไม่พบ UID จากระบบโปรไฟล์ กรุณาเข้าสู่ระบบก่อนใช้งาน');
+                return;
+            }
+            socket.emit('identify', { uid: userUid }, response => {
+                if (!response?.success) {
+                    identified = false;
+                    showStatus(response?.message || 'ไม่สามารถยืนยัน UID ได้');
+                    if (response?.banned) {
+                        alert('บัญชีนี้ถูกระงับการใช้งาน\\n' + (response.reason || ''));
+                        socket.disconnect();
+                    }
+                    return;
+                }
+                identified = true;
+                if (localStream) startBtn.disabled = false;
+                showStatus('ยืนยัน UID แล้ว กดเริ่มสุ่มจับคู่ได้เลย');
+            });
+        }
+        socket.on('connect', identifyUser);
+
+        // DOM elements
+        const meVideo = document.getElementById('me');
+        const otherVideo = document.getElementById('other');
+        const statusBox = document.getElementById('status');
+
+        const startBtn = document.getElementById('start');
+        const nextBtn = document.getElementById('next');
+        const leaveBtn = document.getElementById('leave');
+        const reportBtn = document.getElementById('report');
+
+        const reportModal = document.getElementById('reportModal');
+        const reportReason = document.getElementById('reportReason');
+        const reportDetail = document.getElementById('reportDetail');
+        const cancelReportBtn = document.getElementById('cancelReport');
+        const submitReportBtn = document.getElementById('submitReport');
+
+        let pc = null;
+        let localStream = null;
+        let waitingCandidates = [];
+
+        // Show status
+        function showStatus(text) {
+            statusBox.textContent = text;
+            statusBox.style.display = text ? 'flex' : 'none';
+        }
+
+        // Open camera
+        async function openCamera() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: true,
+                    audio: true
+                });
+
+                meVideo.srcObject = localStream;
+                startBtn.disabled = !identified;
+
+                showStatus(identified ? 'กดปุ่ม "เริ่มสุ่มจับคู่" เพื่อเริ่มคุย' : 'กำลังตรวจสอบ UID...');
+
+            } catch (err) {
+                console.error('Camera error:', err);
+
+                showStatus(
+                    'เปิดกล้องไม่ได้ (' + err.name + ') กรุณากดอนุญาตกล้องและไมโครโฟน'
+                );
+            }
+        }
+
+        // Close peer connection
+        function closePeer() {
+            if (pc) {
+                pc.close();
+            }
+
+            pc = null;
+            waitingCandidates = [];
+            otherVideo.srcObject = null;
+        }
+
+        // Create peer connection
+        function createPeer() {
+            closePeer();
+
+            pc = new RTCPeerConnection(config);
+
+            localStream.getTracks().forEach((track) => {
+                pc.addTrack(track, localStream);
+            });
+
+            pc.ontrack = (event) => {
+                otherVideo.srcObject = event.streams[0];
+                showStatus('');
+            };
+
+            pc.onicecandidate = (event) => {
+                if (event.candidate) {
+                    socket.emit('signal', {
+                        candidate: event.candidate
+                    });
+                }
+            };
+        }
+
+        // Start matching
+        startBtn.onclick = () => {
+            const selectedTopic = sessionStorage.getItem('selectedTopic');
+
+            if (!identified) {
+                showStatus('กรุณาระบุ UID 8 หลักก่อนเริ่มใช้งาน');
+                return;
+            }
+            if (!['study', 'university', 'career', 'technology', 'lifestyle'].includes(selectedTopic)) {
+                sessionStorage.removeItem('selectedTopic');
+                window.location.replace('/random-discussions.html?required=1');
+                return;
+            }
+
+            startBtn.disabled = true;
+            nextBtn.disabled = false;
+            leaveBtn.disabled = false;
+            reportBtn.disabled = true;
+
+            showStatus('กำลังหาคู่...');
+
+            socket.emit('join', {
+                topic: selectedTopic
+            });
+        };
+
+        // Find next partner
+        nextBtn.onclick = () => {
+            closePeer();
+
+            reportBtn.disabled = true;
+            showStatus('กำลังหาคู่ใหม่...');
+
+            socket.emit('next');
+        };
+
+        // Leave matching
+        leaveBtn.onclick = () => {
+            closePeer();
+
+            socket.emit('leave');
+
+            startBtn.disabled = false;
+            nextBtn.disabled = true;
+            leaveBtn.disabled = true;
+            reportBtn.disabled = true;
+
+            reportModal.style.display = 'none';
+
+            showStatus('กดปุ่ม "เริ่มสุ่มจับคู่" เพื่อเริ่มคุย');
+        };
+
+        // Open report modal
+        reportBtn.onclick = () => {
+            if (reportBtn.disabled) return;
+
+            reportReason.value = '';
+            reportDetail.value = '';
+
+            reportModal.style.display = 'flex';
+        };
+
+        // Cancel report
+        cancelReportBtn.onclick = () => {
+            reportModal.style.display = 'none';
+        };
+
+        // Click outside modal to close
+        reportModal.onclick = (event) => {
+            if (event.target === reportModal) {
+                reportModal.style.display = 'none';
+            }
+        };
+
+        
+// Submit report to SQLite through server
+submitReportBtn.onclick = () => {
+    const reason = reportReason.value;
+    const detail = reportDetail.value.trim();
+
+    if (!reason) {
+        alert('กรุณาเลือกเหตุผลในการรายงาน');
+        return;
+    }
+
+    if (reportBtn.disabled) {
+        alert('ไม่พบคู่สนทนาที่สามารถรายงานได้');
+        return;
+    }
+
+    submitReportBtn.disabled = true;
+    submitReportBtn.textContent = 'กำลังส่ง...';
+
+    socket.emit('submit-report', {
+        reason: reason,
+        detail: detail
+    }, (response) => {
+
+        submitReportBtn.disabled = false;
+        submitReportBtn.textContent = 'ส่งรายงาน';
+
+        if (!response || !response.success) {
+            alert(response?.message || 'ส่งรายงานไม่สำเร็จ');
+            return;
+        }
+
+        alert(response.message);
+
+        reportModal.style.display = 'none';
+        reportReason.value = '';
+        reportDetail.value = '';
+    });
+};
+
+
+        // Server events
+        socket.on('waiting', () => {
+            closePeer();
+
+            reportBtn.disabled = true;
+            showStatus('กำลังหาคู่...');
+        });
+
+        socket.on('matched', async ({ initiator }) => {
+            showStatus('เจอคู่แล้ว กำลังเชื่อมต่อ...');
+
+            reportBtn.disabled = false;
+
+            createPeer();
+
+            if (initiator) {
+                const offer = await pc.createOffer();
+
+                await pc.setLocalDescription(offer);
+
+                socket.emit('signal', {
+                    description: pc.localDescription
+                });
+            }
+        });
+
+        socket.on('signal', async (data) => {
+            if (!pc) return;
+
+            if (data.description) {
+                await pc.setRemoteDescription(data.description);
+
+                // Add candidates received early
+                for (const candidate of waitingCandidates) {
+                    await pc.addIceCandidate(candidate);
+                }
+
+                waitingCandidates = [];
+
+                if (data.description.type === 'offer') {
+                    const answer = await pc.createAnswer();
+
+                    await pc.setLocalDescription(answer);
+
+                    socket.emit('signal', {
+                        description: pc.localDescription
+                    });
+                }
+
+            } else if (data.candidate) {
+                if (pc.remoteDescription) {
+                    await pc.addIceCandidate(data.candidate);
+                } else {
+                    waitingCandidates.push(data.candidate);
+                }
+            }
+        });
+
+        // Partner left
+        socket.on('partner-left', () => {
+            closePeer();
+
+            reportBtn.disabled = true;
+
+            showStatus('อีกฝั่งออกไปแล้ว กำลังหาคู่ใหม่...');
+        });
+
+        // Report error from server (if supported)
+        socket.on('match-error', (message) => {
+            showStatus(message);
+
+            startBtn.disabled = false;
+            nextBtn.disabled = true;
+            leaveBtn.disabled = true;
+            reportBtn.disabled = true;
+        });
+
+        socket.on('user-warning', data => {
+            alert('คำเตือนจากผู้ดูแลระบบ\\n' + (data?.reason || 'กรุณาปฏิบัติตามกติกาการใช้งาน'));
+        });
+
+        socket.on('user-banned', data => {
+            identified = false;
+            closePeer();
+            startBtn.disabled = true;
+            nextBtn.disabled = true;
+            leaveBtn.disabled = true;
+            reportBtn.disabled = true;
+            showStatus('บัญชีนี้ถูกระงับการใช้งาน ' + (data?.reason || ''));
+            alert('บัญชีถูกระงับการใช้งาน\\n' + (data?.reason || '') +
+                (data?.expiresAt ? '\\nสิ้นสุด: ' + new Date(data.expiresAt).toLocaleString('th-TH') : '\\nระงับถาวร'));
+        });
+
+        // Start camera
+        openCamera();
+
+    </script>
+
+</body>
+</html>
