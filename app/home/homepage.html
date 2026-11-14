@@ -44,13 +44,13 @@
                     <div class="announcement-slider">
                         <div class="announcement-track" id="announcementTrack" aria-label="ภาพประกาศ">
                             <div class="announcement-item">
-                                <img src="#" alt="ประกาศที่ 1" width="1200" height="480">
+                                <img src="/app/home/images/announcement-campus.svg" alt="ภาพประกอบพื้นที่การเรียนรู้ของ Dukdui SPU" width="1200" height="480">
                             </div>
                             <div class="announcement-item">
-                                <img src="#" alt="ประกาศที่ 2" width="1200" height="480">
+                                <img src="/app/home/images/announcement-friends.svg" alt="ภาพประกอบการพบเพื่อนใหม่ผ่านแชทสุ่ม" width="1200" height="480">
                             </div>
                             <div class="announcement-item">
-                                <img src="#" alt="ประกาศที่ 3" width="1200" height="480">
+                                <img src="/app/home/images/announcement-community.svg" alt="ภาพประกอบชุมชน Dukdui SPU" width="1200" height="480">
                             </div>
                         </div>
                     </div>
@@ -66,54 +66,12 @@
         <!-- แถบด้านขวา -->
         <aside class="right-sidebar">
             <div class="online-heading">
-                <h3>เพื่อนออนไลน์ (10)</h3>
+                <h3>เพื่อนในแชท <span id="friendCount">(0)</span></h3>
                 <a href="/private-chat/chat.html" data-app-link="chat">ดูแชททั้งหมด</a>
             </div>
 
-            <!-- รายชื่อเพื่อนออนไลน์ -->
-            <div class="online-list">
-                <div class="online-user">
-                    <div class="online-avatar"></div>
-                    <div>
-                        <p>Username</p>
-                        <small>ออนไลน์</small>
-                    </div>
-                </div>
-                <div class="online-user">
-                    <div class="online-avatar"></div>
-                    <div>
-                        <p>Username</p>
-                        <small>ออนไลน์</small>
-                    </div>
-                </div>
-                <div class="online-user">
-                    <div class="online-avatar"></div>
-                    <div>
-                        <p>Username</p>
-                        <small>ออนไลน์</small>
-                    </div>
-                </div>
-                <div class="online-user">
-                    <div class="online-avatar"></div>
-                    <div>
-                        <p>Username</p>
-                        <small>ออนไลน์</small>
-                    </div>
-                </div>
-                <div class="online-user">
-                    <div class="online-avatar"></div>
-                    <div>
-                        <p>Username</p>
-                        <small>ออนไลน์</small>
-                    </div>
-                </div>
-                <div class="online-user">
-                    <div class="online-avatar"></div>
-                    <div>
-                        <p>Username</p>
-                        <small>ออนไลน์</small>
-                    </div>
-                </div>
+            <div class="online-list" id="friendList" aria-live="polite">
+                <p class="friend-empty">กำลังโหลดรายชื่อเพื่อน...</p>
             </div>
 
             <!-- กล่องสุ่มคุย -->

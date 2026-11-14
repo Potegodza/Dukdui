@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="480" viewBox="0 0 1200 480" role="img" aria-labelledby="title">
+  <title id="title">ชุมชน Dukdui SPU</title>
+  <rect width="1200" height="480" fill="#183c48"/>
+  <circle cx="1100" cy="88" r="190" fill="#246473"/>
+  <circle cx="126" cy="420" r="210" fill="#205665"/>
+  <path d="M0 341c137-65 239-69 351-18 126 57 221 52 349-5 161-72 310-64 500 23v139H0Z" fill="#112d38"/>
+  <rect x="450" y="103" width="300" height="240" rx="26" fill="#f1f5f4"/>
+  <rect x="489" y="143" width="222" height="15" rx="7" fill="#91b5b3"/>
+  <rect x="489" y="177" width="166" height="12" rx="6" fill="#c4d6d5"/>
+  <circle cx="554" cy="253" r="38" fill="#e9b995"/>
+  <circle cx="648" cy="253" r="38" fill="#d7a47f"/>
+  <path d="M514 326c2-52 17-77 43-77 27 0 42 25 44 77ZM608 326c2-52 17-77 43-77 27 0 42 25 44 77Z" fill="#487c91"/>
+  <path d="M297 191h72a17 17 0 0 1 17 17v38a17 17 0 0 1-17 17h-39l-27 24v-24h-6a17 17 0 0 1-17-17v-38a17 17 0 0 1 17-17Z" fill="#f0c953"/>
+  <path d="M836 199h77a17 17 0 0 1 17 17v37a17 17 0 0 1-17 17h-7v24l-28-24h-42a17 17 0 0 1-17-17v-37a17 17 0 0 1 17-17Z" fill="#e58a79"/>
+  <circle cx="880" cy="106" r="32" fill="#91c5b9"/>
+  <path d="m865 106 11 11 21-24" fill="none" stroke="#183c48" stroke-linecap="round" stroke-linejoin="round" stroke-width="8"/>
+</svg>

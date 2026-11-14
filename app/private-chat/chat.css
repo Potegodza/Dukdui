@@ -177,16 +177,61 @@ input {
 }
 
 .chat-header {
-    padding: 15px 20px;
-    background-color: #0f172a;
-    border-bottom: 1px solid #1e293b;
     display: flex;
     align-items: center;
     gap: 12px;
+    padding: 15px 20px;
+    background-color: #0f172a;
+    border-bottom: 1px solid #1e293b;
+}
+
+.friend-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.friend-action-btn {
+    min-height: 36px;
+    padding: 6px 12px;
+    border: 1px solid #475569;
+    border-radius: 8px;
+    background: transparent;
+    color: #dbe5f4;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.friend-action-btn:hover:not(:disabled) {
+    background: #1e293b;
+}
+
+.friend-action-btn:focus-visible,
+.friend-action-dialog button:focus-visible {
+    outline: 3px solid #93c5fd;
+    outline-offset: 2px;
+}
+
+.block-friend-btn {
+    border-color: #9f4560;
+    color: #ffb6c8;
+}
+
+.friend-action-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
 }
 
 .header-info {
     flex-grow: 1;
+    min-width: 0;
+}
+
+.header-info .name {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .header-info .name {
@@ -298,6 +343,57 @@ input {
     opacity: 0.5;
 }
 
+.friend-action-dialog {
+    width: min(420px, calc(100% - 32px));
+    margin: auto;
+    padding: 24px;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    background: #0f172a;
+    color: #ffffff;
+}
+
+.friend-action-dialog::backdrop {
+    background: rgb(0 0 0 / 70%);
+}
+
+.friend-action-dialog h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+}
+
+.friend-action-dialog p {
+    margin: 0;
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.friend-action-dialog-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.friend-action-dialog button {
+    min-height: 38px;
+    padding: 8px 14px;
+    border: 0;
+    border-radius: 8px;
+    background: #334155;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+#confirmFriendAction {
+    background: #2563eb;
+}
+
+#confirmFriendAction[data-action="block"] {
+    background: #b83d5e;
+}
+
 /* Modal วิดีโอคอล */
 .video-modal {
     display: none;
@@ -387,5 +483,19 @@ input {
 
     .chat-window-pane {
         min-height: 55vh;
+    }
+
+    .chat-header {
+        flex-wrap: wrap;
+    }
+
+    .friend-actions {
+        order: 3;
+        width: 100%;
+        justify-content: flex-end;
+    }
+
+    .video-call-btn {
+        margin-left: auto;
     }
 }

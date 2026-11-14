@@ -43,6 +43,10 @@
                             <span class="name" id="activeChatName">เลือกเพื่อนเพื่อเริ่มแชท</span>
                             <span class="status" id="activeChatStatus">ออฟไลน์</span>
                         </div>
+                        <div class="friend-actions">
+                            <button class="friend-action-btn remove-friend-btn" id="removeFriendBtn" type="button" disabled>ลบเพื่อน</button>
+                            <button class="friend-action-btn block-friend-btn" id="blockFriendBtn" type="button" disabled>บล็อก</button>
+                        </div>
                         <button class="video-call-btn" id="videoCallBtn">
                             <i data-lucide="video"></i> เปิดกล้อง
                         </button>
@@ -74,6 +78,15 @@
             <button class="close-video-btn" id="closeVideoBtn">วางสาย / ปิดกล้อง</button>
         </div>
     </div>
+
+    <dialog class="friend-action-dialog" id="friendActionDialog" aria-labelledby="friendActionTitle">
+        <h2 id="friendActionTitle"></h2>
+        <p id="friendActionMessage"></p>
+        <div class="friend-action-dialog-buttons">
+            <button type="button" id="cancelFriendAction">ยกเลิก</button>
+            <button type="button" id="confirmFriendAction">ยืนยัน</button>
+        </div>
+    </dialog>
 
 
     <script src="/app/shared/navigation.js"></script>

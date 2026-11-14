@@ -137,6 +137,27 @@
             background: #f59e0b;
         }
 
+        #like {
+            background: #d84e78;
+        }
+
+        #like:focus-visible,
+        #next:focus-visible,
+        #report:focus-visible,
+        #leave:focus-visible,
+        #start:focus-visible {
+            outline: 3px solid #f8d77b;
+            outline-offset: 3px;
+        }
+
+        .friend-feedback {
+            min-height: 24px;
+            margin-top: 12px;
+            color: #b7d6ff;
+            text-align: center;
+            font-size: 14px;
+        }
+
         /* Report modal */
         .report-modal {
             display: none;
@@ -233,10 +254,12 @@
 
             <div class="buttons">
                 <button id="start" disabled>เริ่มสุ่มจับคู่</button>
+                <button id="like" disabled>♡ ถูกใจและเพิ่มเป็นเพื่อน</button>
                 <button id="next" disabled>ถัดไป</button>
                 <button id="report" disabled>⚑ รายงาน</button>
                 <button id="leave" disabled>ออก</button>
             </div>
+            <p id="friendFeedback" class="friend-feedback" role="status" aria-live="polite"></p>
 
         </div>
         </main>
@@ -326,6 +349,8 @@
         const nextBtn = document.getElementById('next');
         const leaveBtn = document.getElementById('leave');
         const reportBtn = document.getElementById('report');
+        const likeBtn = document.getElementById('like');
+        const friendFeedback = document.getElementById('friendFeedback');
 
         const reportModal = document.getElementById('reportModal');
         const reportReason = document.getElementById('reportReason');
@@ -336,6 +361,16 @@
         let pc = null;
         let localStream = null;
         let waitingCandidates = [];
+        let currentMatchSessionId = null;
+        let friendSaved = false;
+
+        function resetLikeState() {
+            currentMatchSessionId = null;
+            friendSaved = false;
+            likeBtn.disabled = true;
+            likeBtn.textContent = '♡ ถูกใจและเพิ่มเป็นเพื่อน';
+            friendFeedback.textContent = '';
+        }
 
         // Show status
         function showStatus(text) {
@@ -418,6 +453,7 @@
             nextBtn.disabled = false;
             leaveBtn.disabled = false;
             reportBtn.disabled = true;
+            resetLikeState();
 
             showStatus('กำลังหาคู่...');
 
@@ -431,6 +467,7 @@
             closePeer();
 
             reportBtn.disabled = true;
+            resetLikeState();
             showStatus('กำลังหาคู่ใหม่...');
 
             socket.emit('next');
@@ -446,6 +483,7 @@
             nextBtn.disabled = true;
             leaveBtn.disabled = true;
             reportBtn.disabled = true;
+            resetLikeState();
 
             reportModal.style.display = 'none';
 
@@ -520,10 +558,14 @@ submitReportBtn.onclick = () => {
             closePeer();
 
             reportBtn.disabled = true;
+            resetLikeState();
             showStatus('กำลังหาคู่...');
         });
 
-        socket.on('matched', async ({ initiator }) => {
+        socket.on('matched', async ({ initiator, sessionId }) => {
+            resetLikeState();
+            currentMatchSessionId = sessionId;
+            likeBtn.disabled = !sessionId;
             showStatus('เจอคู่แล้ว กำลังเชื่อมต่อ...');
 
             reportBtn.disabled = false;
@@ -539,6 +581,38 @@ submitReportBtn.onclick = () => {
                     description: pc.localDescription
                 });
             }
+        });
+
+        likeBtn.onclick = () => {
+            if (!currentMatchSessionId || likeBtn.disabled) return;
+            likeBtn.disabled = true;
+            likeBtn.textContent = 'กำลังเพิ่มเพื่อน...';
+            friendFeedback.textContent = '';
+            socket.emit('like', { sessionId: currentMatchSessionId });
+        };
+
+        function showFriendAdded(sessionId, friendName) {
+            if (!sessionId || sessionId !== currentMatchSessionId) return;
+            friendSaved = true;
+            likeBtn.disabled = true;
+            likeBtn.textContent = '✓ เป็นเพื่อนแล้ว';
+            friendFeedback.textContent = friendName
+                ? `เพิ่ม ${friendName} ในเพื่อนแล้ว เปิดแชทต่อได้ที่หน้าแชท`
+                : 'เพิ่มเพื่อนแล้ว เปิดแชทต่อได้ที่หน้าแชท';
+        }
+
+        socket.on('like-saved', ({ sessionId, friendName } = {}) => {
+            showFriendAdded(sessionId, friendName);
+        });
+
+        socket.on('friend-added', ({ sessionId, friendName } = {}) => {
+            showFriendAdded(sessionId, friendName);
+        });
+
+        socket.on('like-error', ({ message } = {}) => {
+            friendFeedback.textContent = message || 'เพิ่มเพื่อนไม่สำเร็จ กรุณาลองอีกครั้ง';
+            likeBtn.disabled = !currentMatchSessionId;
+            likeBtn.textContent = '♡ ถูกใจและเพิ่มเป็นเพื่อน';
         });
 
         socket.on('signal', async (data) => {
@@ -578,6 +652,11 @@ submitReportBtn.onclick = () => {
             closePeer();
 
             reportBtn.disabled = true;
+            currentMatchSessionId = null;
+            likeBtn.disabled = true;
+            if (!friendSaved) {
+                likeBtn.textContent = '♡ ถูกใจและเพิ่มเป็นเพื่อน';
+            }
 
             showStatus('อีกฝั่งออกไปแล้ว กำลังหาคู่ใหม่...');
         });
@@ -590,6 +669,7 @@ submitReportBtn.onclick = () => {
             nextBtn.disabled = true;
             leaveBtn.disabled = true;
             reportBtn.disabled = true;
+            resetLikeState();
         });
 
         socket.on('user-warning', data => {
@@ -643,6 +723,7 @@ submitReportBtn.onclick = () => {
             nextBtn.disabled = true;
             leaveBtn.disabled = true;
             reportBtn.disabled = true;
+            resetLikeState();
             showStatus('การเชื่อมต่อขาดหาย กำลังเชื่อมต่อใหม่...');
         });
 

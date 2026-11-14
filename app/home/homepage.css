@@ -291,10 +291,26 @@ body {
     display: flex;
     align-items: center;
     gap: 10px;
+    color: inherit;
+    text-decoration: none;
 }
 .online-avatar {
     width: 29px;
     height: 29px;
+    display: grid;
+    place-items: center;
+    background-color: #244276;
+    color: #e5edff;
+    font-size: 12px;
+    font-weight: 600;
+}
+.friend-empty {
+    color: #9299aa;
+    font-size: 11px;
+    line-height: 1.6;
+}
+.friend-empty a {
+    color: #91b5ff;
 }
 /* กล่องสุ่มคุย */
 .random-box {
@@ -399,7 +415,7 @@ body {
 
 .announcement-track {
     display: flex;
-    transition: transform 0.6s ease-in-out;
+    transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
 /* แต่ละประกาศ */
 .announcement-item {

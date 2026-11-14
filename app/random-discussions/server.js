@@ -420,6 +420,101 @@ function validUid(uid) {
         && !/[\u0000-\u001f\u007f/]/.test(uid);
 }
 
+async function requireFirebaseUser(req, res, next) {
+    const authorization = req.get('authorization') || '';
+    const match = authorization.match(/^Bearer (.+)$/i);
+    if (!match) {
+        return res.status(401).json({ success: false, message: 'กรุณาเข้าสู่ระบบใหม่' });
+    }
+
+    try {
+        req.firebaseUser = await firebaseAuth.verifyIdToken(match[1]);
+        if (!validUid(req.firebaseUser.uid)) {
+            return res.status(401).json({ success: false, message: 'บัญชีผู้ใช้ไม่ถูกต้อง' });
+        }
+        next();
+    } catch (error) {
+        console.error('ตรวจสอบ Firebase ID token สำหรับรายชื่อเพื่อนไม่สำเร็จ:', error);
+        res.status(401).json({ success: false, message: 'กรุณาเข้าสู่ระบบใหม่' });
+    }
+}
+
+app.get('/api/me/friend-filters', requireFirebaseUser, async (req, res) => {
+    const userRef = firestore.collection('users').doc(req.firebaseUser.uid);
+    try {
+        const [hiddenMatches, blockedUsers] = await Promise.all([
+            userRef.collection('hidden_matches').get(),
+            userRef.collection('blocked_users').get()
+        ]);
+        res.json({
+            success: true,
+            hiddenMatchIds: hiddenMatches.docs.map((document) => document.id),
+            blockedUserIds: blockedUsers.docs.map((document) => document.id)
+        });
+    } catch (error) {
+        console.error('โหลดการตั้งค่าเพื่อนไม่สำเร็จ:', error);
+        res.status(500).json({ success: false, message: 'โหลดรายชื่อเพื่อนไม่สำเร็จ' });
+    }
+});
+
+async function getMatchForUser(matchId, userId) {
+    if (!validUid(matchId)) return null;
+
+    const matchRef = firestore.collection('matches').doc(matchId);
+    const snapshot = await matchRef.get();
+    if (!snapshot.exists) return null;
+
+    const match = snapshot.data();
+    if (
+        !Array.isArray(match.participants)
+        || match.participants.length !== 2
+        || !match.participants.includes(userId)
+    ) {
+        return null;
+    }
+
+    const friendUid = match.participants.find((uid) => uid !== userId);
+    if (!validUid(friendUid)) return null;
+    return { matchRef, friendUid };
+}
+
+app.post('/api/me/friends/:matchId/remove', requireFirebaseUser, async (req, res) => {
+    try {
+        const match = await getMatchForUser(req.params.matchId, req.firebaseUser.uid);
+        if (!match) {
+            return res.status(404).json({ success: false, message: 'ไม่พบเพื่อนในรายชื่อของคุณ' });
+        }
+
+        await firestore.collection('users').doc(req.firebaseUser.uid)
+            .collection('hidden_matches').doc(req.params.matchId)
+            .set({ createdAt: new Date().toISOString() });
+        res.json({ success: true });
+    } catch (error) {
+        console.error('ลบเพื่อนออกจากรายชื่อไม่สำเร็จ:', error);
+        res.status(500).json({ success: false, message: 'ลบเพื่อนไม่สำเร็จ กรุณาลองใหม่' });
+    }
+});
+
+app.post('/api/me/friends/:matchId/block', requireFirebaseUser, async (req, res) => {
+    try {
+        const match = await getMatchForUser(req.params.matchId, req.firebaseUser.uid);
+        if (!match) {
+            return res.status(404).json({ success: false, message: 'ไม่พบเพื่อนในรายชื่อของคุณ' });
+        }
+
+        const userRef = firestore.collection('users').doc(req.firebaseUser.uid);
+        const batch = firestore.batch();
+        const createdAt = new Date().toISOString();
+        batch.set(userRef.collection('blocked_users').doc(match.friendUid), { createdAt });
+        batch.set(userRef.collection('hidden_matches').doc(req.params.matchId), { createdAt });
+        await batch.commit();
+        res.json({ success: true });
+    } catch (error) {
+        console.error('บล็อกเพื่อนไม่สำเร็จ:', error);
+        res.status(500).json({ success: false, message: 'บล็อกเพื่อนไม่สำเร็จ กรุณาลองใหม่' });
+    }
+});
+
 async function getActiveSanction(uid) {
     const sanctionRef = sanctionsCollection.doc(uid);
     const snapshot = await sanctionRef.get();
@@ -565,6 +660,18 @@ const allowedReasons = [
 
 const queues = new Map();
 
+async function usersHaveBlockedEachOther(firstUid, secondUid) {
+    const firstBlock = firestore.collection('users').doc(firstUid)
+        .collection('blocked_users').doc(secondUid);
+    const secondBlock = firestore.collection('users').doc(secondUid)
+        .collection('blocked_users').doc(firstUid);
+    const [firstSnapshot, secondSnapshot] = await Promise.all([
+        firstBlock.get(),
+        secondBlock.get()
+    ]);
+    return firstSnapshot.exists || secondSnapshot.exists;
+}
+
 function getQueue(topic) {
     if (!queues.has(topic)) {
         queues.set(topic, []);
@@ -617,26 +724,37 @@ async function join(socket, topic) {
     socket.topic = topic;
 
     const queue = getQueue(topic);
+    let remainingCandidates = queue.length;
+    let other = null;
+    while (remainingCandidates > 0) {
+        const candidate = queue.shift();
+        remainingCandidates -= 1;
+        if (!candidate?.connected || candidate.partner || candidate === socket) continue;
 
-    const otherIndex = queue.findIndex(
-        (user) =>
-            user.connected &&
-            !user.partner &&
-            user !== socket
-    );
+        if (await usersHaveBlockedEachOther(socket.uid, candidate.uid)) {
+            addToQueue(candidate);
+            continue;
+        }
 
-    if (otherIndex === -1) {
+        if (candidate.connected && !candidate.partner && socket.connected) {
+            other = candidate;
+            break;
+        }
+    }
+
+    if (!other) {
         addToQueue(socket);
         return;
     }
 
-    const other = queue.splice(otherIndex, 1)[0];
-
     socket.partner = other;
     other.partner = socket;
+    const sessionId = crypto.randomUUID();
+    socket.matchSessionId = sessionId;
+    other.matchSessionId = sessionId;
 
-    socket.emit('matched', { initiator: true });
-    other.emit('matched', { initiator: false });
+    socket.emit('matched', { initiator: true, sessionId });
+    other.emit('matched', { initiator: false, sessionId });
 
     console.log('จับคู่สำเร็จ:', socket.id, other.id);
 }
@@ -645,14 +763,16 @@ function unpair(socket) {
     const partner = socket.partner;
 
     if (!partner) {
+        socket.matchSessionId = null;
         return;
     }
 
     socket.partner = null;
     partner.partner = null;
+    socket.matchSessionId = null;
+    partner.matchSessionId = null;
 
     partner.emit('partner-left');
-
     addToQueue(partner);
 }
 
@@ -684,6 +804,13 @@ io.use(async (socket, next) => {
         }
 
         socket.uid = decodedToken.uid;
+        socket.displayName = (
+            typeof decodedToken.name === 'string' && decodedToken.name.trim()
+                ? decodedToken.name.trim()
+                : typeof decodedToken.email === 'string'
+                    ? decodedToken.email.split('@')[0]
+                    : ''
+        ) || 'เพื่อน Dukdui';
         next();
     } catch (error) {
         console.error('ตรวจสอบ Firebase ID token ไม่สำเร็จ:', error);
@@ -725,6 +852,42 @@ io.on('connection', (socket) => {
     socket.on('signal', (data) => {
         if (socket.partner) {
             socket.partner.emit('signal', data);
+        }
+    });
+
+    socket.on('like', async (data) => {
+        const partner = socket.partner;
+        const sessionId = data?.sessionId;
+        if (
+            !partner?.connected
+            || !partner.uid
+            || typeof sessionId !== 'string'
+            || sessionId !== socket.matchSessionId
+            || sessionId !== partner.matchSessionId
+        ) {
+            socket.emit('like-error', { message: 'ไม่พบคู่สนทนาปัจจุบัน กรุณาลองใหม่' });
+            return;
+        }
+
+        try {
+            if (await usersHaveBlockedEachOther(socket.uid, partner.uid)) {
+                socket.emit('like-error', { message: 'ไม่สามารถเพิ่มผู้ใช้รายนี้เป็นเพื่อนได้' });
+                return;
+            }
+
+            await firestore.collection('matches').doc(sessionId).set({
+                participants: [socket.uid, partner.uid],
+                participantNames: {
+                    [socket.uid]: socket.displayName,
+                    [partner.uid]: partner.displayName
+                },
+                createdAt: new Date().toISOString()
+            });
+            socket.emit('like-saved', { sessionId, friendName: partner.displayName });
+            partner.emit('friend-added', { sessionId, friendName: socket.displayName });
+        } catch (error) {
+            console.error('บันทึกเพื่อนจากการสุ่มคุยไม่สำเร็จ:', error);
+            socket.emit('like-error', { message: 'เพิ่มเพื่อนไม่สำเร็จ กรุณาลองอีกครั้ง' });
         }
     });
 

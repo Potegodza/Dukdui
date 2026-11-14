@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="480" viewBox="0 0 1200 480" role="img" aria-labelledby="title">
+  <title id="title">พื้นที่การเรียนรู้และการพบเพื่อนใหม่</title>
+  <rect width="1200" height="480" fill="#192d4d"/>
+  <circle cx="1000" cy="85" r="180" fill="#274f87"/>
+  <circle cx="1070" cy="405" r="210" fill="#1e3e6c"/>
+  <path d="M0 365 260 290l180 52 210-112 250 83 300-118v285H0Z" fill="#10223d"/>
+  <rect x="676" y="146" width="286" height="190" rx="18" fill="#f3f6fc"/>
+  <rect x="705" y="178" width="228" height="14" rx="7" fill="#9fb4d5"/>
+  <rect x="705" y="210" width="144" height="12" rx="6" fill="#c2cde0"/>
+  <rect x="705" y="254" width="88" height="54" rx="10" fill="#4778ba"/>
+  <rect x="808" y="254" width="125" height="54" rx="10" fill="#dbe5f4"/>
+  <path d="M763 335h112v18H763z" fill="#c8d6ea"/>
+  <circle cx="574" cy="193" r="42" fill="#f1c7a5"/>
+  <path d="M535 189c0-32 19-53 43-53 27 0 42 21 42 53-13-10-25-16-43-16-15 0-28 6-42 16Z" fill="#17243a"/>
+  <path d="M501 324c5-72 28-106 73-106 44 0 67 34 71 106Z" fill="#dd6b6d"/>
+  <rect x="94" y="113" width="348" height="205" rx="24" fill="#243f69"/>
+  <path d="M139 171h241v18H139zM139 211h184v14H139zM139 247h215v14H139z" fill="#dce8f8"/>
+  <circle cx="373" cy="279" r="27" fill="#74c4c0"/>
+  <path d="m361 279 9 9 17-20" fill="none" stroke="#10223d" stroke-linecap="round" stroke-linejoin="round" stroke-width="7"/>
+</svg>

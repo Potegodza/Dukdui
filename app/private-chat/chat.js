@@ -11,26 +11,39 @@ import {
   where
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { auth, db } from "../login/firebase.js";
+import { loadFriendFilters, updateFriend } from "../shared/friends.js";
 
 const loginPage = "../login/login.html";
 const appContainer = document.getElementById("appContainer");
 const authStatus = document.getElementById("authStatus");
 const connectionStatus = document.getElementById("connectionStatus");
-const userName = document.getElementById("userName");
 const contactListEl = document.getElementById("contactList");
 const searchInput = document.getElementById("searchInput");
 const activeChatName = document.getElementById("activeChatName");
 const activeChatStatus = document.getElementById("activeChatStatus");
+const activeAvatar = document.getElementById("activeAvatar");
 const chatMessages = document.getElementById("chatMessages");
 const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
+const removeFriendBtn = document.getElementById("removeFriendBtn");
+const blockFriendBtn = document.getElementById("blockFriendBtn");
+const friendActionDialog = document.getElementById("friendActionDialog");
+const friendActionTitle = document.getElementById("friendActionTitle");
+const friendActionMessage = document.getElementById("friendActionMessage");
+const cancelFriendActionBtn = document.getElementById("cancelFriendAction");
+const confirmFriendActionBtn = document.getElementById("confirmFriendAction");
 
 let currentUser = null;
 let contactsData = [];
 let currentActiveContactId = null;
 let messagesUnsubscribe = null;
+let latestMatchesSnapshot = null;
+let friendFilters = { hiddenMatchIds: new Set(), blockedUserIds: new Set() };
+let pendingFriendAction = null;
+let selectingInitialContact = true;
 let sendingMessage = false;
 const latestMessageUnsubscribers = new Map();
+const requestedMatchId = new URLSearchParams(window.location.search).get("match");
 
 function setConnectionStatus(text, isError = false) {
   connectionStatus.textContent = text;
@@ -151,9 +164,12 @@ function selectContact(contact) {
   currentActiveContactId = contact.id;
   renderContacts();
   activeChatName.textContent = contact.name;
+  activeAvatar.textContent = contact.name.charAt(0).toLocaleUpperCase();
   activeChatStatus.textContent = "จับคู่แล้ว";
   messageInput.disabled = false;
   sendBtn.disabled = false;
+  removeFriendBtn.disabled = false;
+  blockFriendBtn.disabled = false;
   showMessageState("กำลังโหลดข้อความ...");
 
   stopMessageListener();
@@ -201,6 +217,7 @@ function subscribeToLatestMessage(contact) {
 }
 
 function handleMatchesSnapshot(snapshot) {
+  latestMatchesSnapshot = snapshot;
   const previousContacts = new Map(contactsData.map((contact) => [contact.id, contact]));
   contactsData = snapshot.docs.flatMap((matchDocument) => {
     const match = matchDocument.data();
@@ -208,12 +225,13 @@ function handleMatchesSnapshot(snapshot) {
       !Array.isArray(match.participants)
       || match.participants.length !== 2
       || !match.participants.includes(currentUser.uid)
+      || friendFilters.hiddenMatchIds.has(matchDocument.id)
     ) {
       return [];
     }
 
     const otherUserId = match.participants.find((uid) => uid !== currentUser.uid);
-    if (!otherUserId) return [];
+    if (!otherUserId || friendFilters.blockedUserIds.has(otherUserId)) return [];
 
     const previous = previousContacts.get(matchDocument.id);
     const names = match.participantNames;
@@ -247,11 +265,72 @@ function handleMatchesSnapshot(snapshot) {
     activeChatStatus.textContent = "";
     messageInput.disabled = true;
     sendBtn.disabled = true;
+    removeFriendBtn.disabled = true;
+    blockFriendBtn.disabled = true;
+    activeAvatar.textContent = "";
     showMessageState("ห้องสนทนานี้ไม่พร้อมใช้งานแล้ว");
   }
 
   renderContacts();
   setConnectionStatus("เชื่อมต่อแชทแล้ว");
+
+  if (selectingInitialContact && requestedMatchId) {
+    const requestedContact = contactsData.find((contact) => contact.id === requestedMatchId);
+    if (requestedContact) selectContact(requestedContact);
+    selectingInitialContact = false;
+  }
+}
+
+function openFriendAction(action) {
+  const contact = contactsData.find((item) => item.id === currentActiveContactId);
+  if (!contact) return;
+
+  pendingFriendAction = { action, contact };
+  const isBlock = action === "block";
+  friendActionTitle.textContent = isBlock ? "บล็อกเพื่อนคนนี้หรือไม่" : "ลบเพื่อนคนนี้หรือไม่";
+  friendActionMessage.textContent = isBlock
+    ? `คุณจะไม่เห็น ${contact.name} ในรายชื่อเพื่อน และจะไม่ถูกสุ่มจับคู่กันอีก`
+    : `${contact.name} จะถูกซ่อนจากรายชื่อเพื่อนของคุณ แต่ประวัติแชทของอีกฝ่ายจะยังอยู่`;
+  confirmFriendActionBtn.textContent = isBlock ? "บล็อกเพื่อน" : "ลบเพื่อน";
+  confirmFriendActionBtn.dataset.action = action;
+  confirmFriendActionBtn.disabled = false;
+  cancelFriendActionBtn.disabled = false;
+  friendActionDialog.showModal();
+}
+
+async function confirmFriendAction() {
+  if (!pendingFriendAction || !currentUser) return;
+
+  const { action, contact } = pendingFriendAction;
+  confirmFriendActionBtn.disabled = true;
+  cancelFriendActionBtn.disabled = true;
+  friendActionMessage.textContent = action === "block"
+    ? "กำลังบล็อกเพื่อน..."
+    : "กำลังลบเพื่อน...";
+
+  try {
+    await updateFriend(currentUser, contact.id, action);
+    friendFilters.hiddenMatchIds.add(contact.id);
+    if (action === "block") friendFilters.blockedUserIds.add(contact.uid);
+    friendActionDialog.close();
+    pendingFriendAction = null;
+    if (latestMatchesSnapshot) handleMatchesSnapshot(latestMatchesSnapshot);
+    setConnectionStatus(action === "block" ? "บล็อกเพื่อนแล้ว" : "ลบเพื่อนแล้ว");
+
+    try {
+      friendFilters = await loadFriendFilters(currentUser);
+      if (latestMatchesSnapshot) handleMatchesSnapshot(latestMatchesSnapshot);
+    } catch (error) {
+      console.error("รีเฟรชการตั้งค่าเพื่อนไม่สำเร็จ", error);
+      setConnectionStatus("บันทึกการเปลี่ยนแปลงแล้ว แต่รีเฟรชสถานะไม่สำเร็จ", true);
+    }
+  } catch (error) {
+    console.error("จัดการเพื่อนไม่สำเร็จ", error);
+    friendActionMessage.textContent = error.message || "ดำเนินการไม่สำเร็จ กรุณาลองอีกครั้ง";
+    setConnectionStatus(friendActionMessage.textContent, true);
+    confirmFriendActionBtn.disabled = false;
+    cancelFriendActionBtn.disabled = false;
+  }
 }
 
 async function sendMessage() {
@@ -298,20 +377,38 @@ document.getElementById("videoCallBtn").addEventListener("click", () => {
 document.getElementById("closeVideoBtn").addEventListener("click", () => {
   videoModal.style.display = "none";
 });
+removeFriendBtn.addEventListener("click", () => openFriendAction("remove"));
+blockFriendBtn.addEventListener("click", () => openFriendAction("block"));
+cancelFriendActionBtn.addEventListener("click", () => {
+  friendActionDialog.close();
+  pendingFriendAction = null;
+});
+friendActionDialog.addEventListener("cancel", (event) => {
+  if (confirmFriendActionBtn.disabled) event.preventDefault();
+});
+confirmFriendActionBtn.addEventListener("click", confirmFriendAction);
 
 onAuthStateChanged(
   auth,
-  (user) => {
+  async (user) => {
     if (!user) {
       window.location.replace(loginPage);
       return;
     }
 
     currentUser = user;
-    userName.textContent = user.displayName || user.email || "ผู้ใช้";
     authStatus.hidden = true;
     appContainer.hidden = false;
 
+    try {
+      friendFilters = await loadFriendFilters(user);
+    } catch (error) {
+      console.error("โหลดการตั้งค่าเพื่อนไม่สำเร็จ", error);
+      setConnectionStatus("โหลดการตั้งค่าเพื่อนไม่สำเร็จ กรุณาโหลดหน้าใหม่", true);
+      return;
+    }
+
+    if (auth.currentUser?.uid !== user.uid) return;
     const matchesQuery = query(
       collection(db, "matches"),
       where("participants", "array-contains", user.uid)
