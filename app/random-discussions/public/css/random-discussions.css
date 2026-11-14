@@ -1,0 +1,144 @@
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Prompt", sans-serif;
+    background: #091020;
+    color: #ffffff;
+    min-height: 100vh;
+}
+
+.random-layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    min-height: 100vh;
+}
+
+/* Main content */
+.main-content {
+    min-width: 0;
+    padding: 55px 45px;
+}
+
+.content {
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+.content h1 {
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.subtitle {
+    color: #94a3b8;
+    font-size: 16px;
+    margin-bottom: 35px;
+}
+
+/* Topic cards */
+.topic-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.topic-card {
+    background: #111c32;
+    border: 2px solid #26344d;
+    border-radius: 18px;
+    padding: 25px;
+    color: #ffffff;
+    text-align: left;
+    font-family: inherit;
+    cursor: pointer;
+    transition: 0.2s ease;
+}
+
+.topic-card:hover {
+    border-color: #6366f1;
+    transform: translateY(-3px);
+    background: #17243d;
+}
+
+.topic-card.selected {
+    border-color: #6366f1;
+    background: #20264c;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+.topic-icon {
+    display: block;
+    font-size: 34px;
+    margin-bottom: 15px;
+}
+
+.topic-card h3 {
+    font-size: 19px;
+    margin-bottom: 8px;
+}
+
+.topic-card p {
+    color: #94a3b8;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+/* Start button */
+#startMatching {
+    display: block;
+    width: 100%;
+    max-width: 300px;
+    margin: 35px auto 0;
+    padding: 17px 25px;
+    border: none;
+    border-radius: 999px;
+    background: #5b5bff;
+    color: white;
+    font-family: inherit;
+    font-size: 18px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+#startMatching:hover:not(:disabled) {
+    background: #4949e8;
+    transform: translateY(-2px);
+}
+
+#startMatching:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+#message {
+    margin-top: 18px;
+    text-align: center;
+    color: #94a3b8;
+    font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .random-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .main-content {
+        padding: 30px 18px;
+    }
+
+    .content h1 {
+        font-size: 25px;
+    }
+
+    .topic-grid {
+        grid-template-columns: 1fr;
+    }
+}

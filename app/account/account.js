@@ -17,6 +17,7 @@ import { auth, db } from "../login/firebase.js";
 const loginPage = "../login/login.html";
 const accountPage = document.querySelector("[data-account-page]");
 const loadingMessage = document.querySelector("[data-auth-loading]");
+const navigationUserName = document.querySelector("#userName");
 const profileForm = document.querySelector("[data-profile-form]");
 const profileMessage = document.querySelector("[data-profile-message]");
 const saveProfileButton = document.querySelector("[data-save-profile]");
@@ -26,6 +27,7 @@ const passwordHelp = document.querySelector("[data-password-help]");
 const changePasswordButton = document.querySelector("[data-change-password]");
 const logoutButton = document.querySelector("[data-sign-out]");
 const logoutMessage = document.querySelector("[data-logout-message]");
+const accountUid = document.querySelector("[data-user-uid]");
 const providerList = document.querySelector("[data-provider-list]");
 const createdAt = document.querySelector("[data-created-at]");
 const emailVerified = document.querySelector("[data-email-verified]");
@@ -139,6 +141,7 @@ function renderTags() {
 }
 
 function showProfile(user, profile) {
+  accountUid.textContent = user.uid;
   profileForm.elements.namedItem("displayName").value = user.displayName || "";
   profileForm.elements.namedItem("email").value = user.email || "";
   profileForm.elements.namedItem("bio").value = typeof profile.bio === "string" ? profile.bio : "";
@@ -298,6 +301,9 @@ onAuthStateChanged(
     }
 
     currentUser = user;
+    if (navigationUserName) {
+      navigationUserName.textContent = user.displayName || user.email || "ผู้ใช้";
+    }
     try {
       const profileSnapshot = await getDoc(doc(db, "users", user.uid));
       showProfile(user, profileSnapshot.exists() ? profileSnapshot.data() : {});

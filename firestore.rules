@@ -46,5 +46,40 @@ service cloud.firestore {
       allow create, update: if isOwner(userId) && validProfile();
       allow delete: if false;
     }
+
+    function isMatchParticipant(matchData) {
+      return request.auth != null
+        && matchData.participants is list
+        && matchData.participants.size() == 2
+        && matchData.participants[0] is string
+        && matchData.participants[1] is string
+        && matchData.participants[0] != matchData.participants[1]
+        && request.auth.uid in matchData.participants;
+    }
+
+    function isChatParticipant(matchId) {
+      let matchPath = /databases/$(database)/documents/matches/$(matchId);
+      return request.auth != null
+        && exists(matchPath)
+        && isMatchParticipant(get(matchPath).data);
+    }
+
+    match /matches/{matchId} {
+      allow read: if isMatchParticipant(resource.data);
+      allow create, update, delete: if false;
+
+      match /messages/{messageId} {
+        allow read: if isChatParticipant(matchId);
+        allow create: if isChatParticipant(matchId)
+          && request.resource.data.keys().hasAll(['authorId', 'text', 'sentAt'])
+          && request.resource.data.keys().hasOnly(['authorId', 'text', 'sentAt'])
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 2000
+          && request.resource.data.sentAt == request.time;
+        allow update, delete: if false;
+      }
+    }
   }
 }

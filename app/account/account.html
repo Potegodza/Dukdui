@@ -5,22 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>บัญชีของฉัน - Dukdui</title>
     <link rel="stylesheet" href="account.css">
+    <link rel="stylesheet" href="/app/shared/navigation.css">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
     <p class="auth-loading" data-auth-loading role="status">กำลังตรวจสอบบัญชี...</p>
-    <main class="account-page" data-account-page hidden>
-        <header class="page-header">
-            <a class="back-link" href="../home/homepage.html">← กลับหน้า Home</a>
-            <div>
-                <p class="eyebrow">DUKDUI SPU</p>
-                <h1>บัญชีของฉัน</h1>
-                <p class="subtitle">จัดการโปรไฟล์ ความสนใจ และความปลอดภัยของบัญชี</p>
-            </div>
-        </header>
+    <div class="account-layout" data-account-page hidden>
+        <aside data-app-navigation data-active-page="account"></aside>
+        <main class="account-page">
+            <header class="page-header">
+                <div>
+                    <p class="eyebrow">DUKDUI SPU</p>
+                    <h1>บัญชีของฉัน</h1>
+                    <p class="subtitle">จัดการโปรไฟล์ ความสนใจ และความปลอดภัยของบัญชี</p>
+                </div>
+            </header>
 
-        <div class="account-grid">
-            <section class="account-card">
+            <div class="account-grid">
+                <section class="account-card">
                 <h2>ข้อมูลโปรไฟล์</h2>
                 <p class="card-description">ข้อมูลนี้ใช้แสดงตัวตนของคุณใน Dukdui</p>
                 <form data-profile-form>
@@ -67,12 +70,13 @@
                     <p class="form-message" data-profile-message role="status" aria-live="polite"></p>
                     <button class="primary-button" type="submit" data-save-profile disabled>บันทึกโปรไฟล์</button>
                 </form>
-            </section>
+                </section>
 
-            <div class="account-side">
+                <div class="account-side">
                 <section class="account-card account-details">
                     <h2>รายละเอียดบัญชี</h2>
                     <dl>
+                        <div><dt>UID บัญชี</dt><dd data-user-uid>กำลังโหลด...</dd></div>
                         <div><dt>วิธีเข้าสู่ระบบ</dt><dd data-provider-list>กำลังโหลด...</dd></div>
                         <div><dt>สมัครเมื่อ</dt><dd data-created-at>กำลังโหลด...</dd></div>
                         <div><dt>อีเมลยืนยันแล้ว</dt><dd data-email-verified>กำลังโหลด...</dd></div>
@@ -107,9 +111,11 @@
                     <p class="form-message" data-logout-message role="status" aria-live="polite"></p>
                     <button class="danger-button" type="button" data-sign-out>ออกจากระบบ</button>
                 </section>
+                </div>
             </div>
-        </div>
-    </main>
+        </main>
+    </div>
+    <script src="/app/shared/navigation.js"></script>
     <script type="module" src="account.js"></script>
 </body>
 </html>

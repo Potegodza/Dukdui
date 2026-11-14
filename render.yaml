@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: dukdui
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: npm ci --prefix app/random-discussions
+    startCommand: npm start
+    healthCheckPath: /app/login/login.html
+    autoDeployTrigger: "off"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: GOOGLE_CLOUD_PROJECT
+        value: dukdui-b71b0
+      - key: DEPLOY_TARGET
+        value: render
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false

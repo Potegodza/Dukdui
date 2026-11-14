@@ -6,15 +6,23 @@ body {
     min-height: 100vh;
     margin: 0;
     display: grid;
-    place-items: center;
+    place-items: stretch;
     background-color: #091020;
     font-family: Arial, sans-serif;
 }
 
+.auth-layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    align-items: center;
+    min-height: 100vh;
+}
+
 .login-card {
     position: relative;
-    width: min(744px, calc(100vw - 32px));
+    width: min(744px, calc(100% - 32px));
     height: 452px;
+    justify-self: center;
 }
 
 .box1 {
@@ -162,7 +170,7 @@ button:disabled {
     text-decoration: none;
 }
 
-@media (max-width: 744px) {
+@media (max-width: 1024px) {
     .card {
         display: none;
     }
@@ -171,6 +179,18 @@ button:disabled {
         left: 50%;
         width: min(288px, calc(100% - 48px));
         transform: translateX(-50%);
+    }
+}
+
+@media (max-width: 768px) {
+    .auth-layout {
+        grid-template-columns: 1fr;
+        align-items: start;
+    }
+
+    .login-card {
+        width: min(744px, calc(100% - 32px));
+        margin: 24px auto;
     }
 }
 

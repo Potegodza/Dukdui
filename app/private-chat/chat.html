@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat</title>
+    <link rel="stylesheet" href="chat.css">
+    <link rel="stylesheet" href="/app/shared/navigation.css">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+
+    <p id="authStatus" class="auth-status" role="status">กำลังตรวจสอบการเข้าสู่ระบบ...</p>
+
+    <div class="app-container" id="appContainer" hidden>
+        <aside data-app-navigation data-active-page="chat"></aside>
+
+        <!-- พื้นที่แสดงเนื้อหาหลัก -->
+        <div class="main-content">
+
+            <!-- 1. แชทส่วนตัว -->
+            <section id="sectionChat" class="app-section active">
+                <div class="chat-list-pane">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="ค้นหาชื่อเพื่อนหรือคีย์เวิร์ด...">
+                    </div>
+                    <h3>รายชื่อเพื่อน</h3>
+                    <p class="connection-status" id="connectionStatus" role="status" aria-live="polite">
+                        กำลังเชื่อมต่อแชท...
+                    </p>
+                    <div class="contact-list" id="contactList">
+
+                    </div>
+                </div>
+
+                <div class="chat-window-pane">
+                    <div class="chat-header">
+                        <div class="avatar" id="activeAvatar"></div>
+                        <div class="header-info">
+                            <span class="name" id="activeChatName">เลือกเพื่อนเพื่อเริ่มแชท</span>
+                            <span class="status" id="activeChatStatus">ออฟไลน์</span>
+                        </div>
+                        <button class="video-call-btn" id="videoCallBtn">
+                            <i data-lucide="video"></i> เปิดกล้อง
+                        </button>
+                    </div>
+
+                    <div class="chat-messages" id="chatMessages" role="log" aria-live="polite">
+                        <div class="message-state">
+                            ยังไม่ได้เลือกบทสนทนา
+                        </div>
+                    </div>
+
+                    <div class="chat-input-area">
+                        <input type="text" id="messageInput" maxlength="2000" placeholder="พิมพ์ข้อความของคุณ..." disabled>
+                        <button id="sendBtn" type="button" aria-label="ส่งข้อความ" disabled><i data-lucide="send"></i></button>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Modal หน้าต่างจำลองวิดีโอคอล -->
+    <div class="video-modal" id="videoModal">
+        <div class="video-modal-content">
+            <div class="video-screen">
+                <i data-lucide="video" style="width: 40px; height: 40px;"></i>
+                <span>กำลังเชื่อมต่อวิดีโอคอล...</span>
+            </div>
+            <button class="close-video-btn" id="closeVideoBtn">วางสาย / ปิดกล้อง</button>
+        </div>
+    </div>
+
+
+    <script src="/app/shared/navigation.js"></script>
+    <script type="module" src="chat.js"></script>
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

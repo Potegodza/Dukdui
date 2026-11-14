@@ -327,6 +327,11 @@ body {
         display: none;
     }
 }
+@media (max-width: 768px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+}
 @media (max-width: 650px) {
     .dashboard {
         grid-template-columns: 1fr;

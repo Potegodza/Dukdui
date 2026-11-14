@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home</title>
     <link rel="stylesheet" href="homepage.css">
+    <link rel="stylesheet" href="/app/shared/navigation.css">
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
 </head>
@@ -12,36 +13,7 @@
     <p class="auth-loading" data-auth-loading role="status">กำลังตรวจสอบการเข้าสู่ระบบ...</p>
     <div class="dashboard" data-authenticated-content hidden>
         <!-- แถบเมนูด้านซ้าย -->
-        <aside class="sidebar">
-            <h1 class="logo">Dukdui <span>SPU</span></h1>
-            <nav class="menu">
-                <a href="#" class="menu-item">
-                    <i data-lucide="house"></i>
-                    <span>หน้าแรก</span>
-                </a>
-                <a href="#" class="menu-item">
-                    <i data-lucide="message-square"></i>
-                    <span>แชทส่วนตัว</span>
-                </a>
-                <a href="#" class="menu-item">
-                    <i data-lucide="users-round"></i>
-                    <span>สุ่มคุย</span>
-                </a>
-                <a href="../account/account.html" class="menu-item">
-                    <i data-lucide="user-round"></i>
-                    <span>บัญชีของฉัน</span>
-                </a>
-            </nav>
-            <!-- ข้อมูลผู้ใช้ด้านล่าง -->
-            <div class="profile">
-                <div class="avatar"></div>
-                <div class="profile-info">
-                    <p data-user-name>ผู้ใช้</p>
-                    <small>ออนไลน์</small>
-                </div>
-                <button class="profile-signout" type="button" data-sign-out>ออกจากระบบ</button>
-            </div>
-        </aside>
+        <aside data-app-navigation data-active-page="home"></aside>
 
         <!-- พื้นที่เนื้อหาตรงกลาง -->
         <main class="main-content">
@@ -60,7 +32,7 @@
                         พื้นที่สำหรับนักศึกษามหาวิทยาลัยศรีปทุม<br>
                         หาเพื่อนพูดคุย
                     </p>
-                    <a href="#" class="start-button">เริ่มจับคู่เลย</a>
+                    <a href="/random-discussions.html" class="start-button" data-app-link="random">เริ่มจับคู่เลย</a>
                 </section>
 
                 <!-- ป้ายประกาศ -->
@@ -95,7 +67,7 @@
         <aside class="right-sidebar">
             <div class="online-heading">
                 <h3>เพื่อนออนไลน์ (10)</h3>
-                <a href="#">ดูทั้งหมด</a>
+                <a href="/private-chat/chat.html" data-app-link="chat">ดูแชททั้งหมด</a>
             </div>
 
             <!-- รายชื่อเพื่อนออนไลน์ -->
@@ -151,10 +123,11 @@
                     อยากคุยกับใครสักคนหรอ ?<br>
                     ลองกดปุ่มสุ่มจับคู่ ดูเลยสิ
                 </p>
-                <a href="#" class="random-button">สุ่มจับคู่</a>
+                <a href="/random-discussions.html" class="random-button" data-app-link="random">สุ่มจับคู่</a>
             </section>
         </aside>
     </div>
+    <script src="/app/shared/navigation.js"></script>
     <script>lucide.createIcons();</script>
     <script src="homepage.js" defer></script>
     <script type="module" src="home-auth.js"></script>

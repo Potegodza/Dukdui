@@ -5,12 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>สมัครสมาชิก</title>
     <link rel="stylesheet" href="stylesign.css">
+    <link rel="stylesheet" href="/app/shared/navigation.css">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
 </head>
 <body>
-    <main class="login-card">
-        <div class="box1"></div>
-        <div class="card" aria-hidden="true"></div>
-        <section class="form-panel">
+    <div class="auth-layout">
+        <aside data-app-navigation data-active-page="auth"></aside>
+        <main class="login-card">
+            <div class="box1"></div>
+            <div class="card" aria-hidden="true"></div>
+            <section class="form-panel">
             <h1>สมัครสมาชิก</h1>
             <p class="subtitle">สร้างบัญชีใหม่เพื่อเข้าใช้งาน Dukdui</p>
             <form data-auth-form="register">
@@ -30,8 +35,10 @@
             <p class="auth-message" data-auth-message role="status" aria-live="polite"></p>
             <button type="button" class="google-button" data-google-sign-in>สมัครสมาชิกด้วย Google</button>
             <p class="textsign">มีบัญชีอยู่แล้ว ? <a href="login.html">เข้าสู่ระบบ</a></p>
-        </section>
-    </main>
+            </section>
+        </main>
+    </div>
+    <script src="/app/shared/navigation.js"></script>
     <script type="module" src="auth.js"></script>
 </body>
 </html>

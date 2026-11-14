@@ -5,11 +5,11 @@
   "type": "module",
   "description": "Dukdui student community web app",
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "scripts": {
     "start": "node serve.cjs",
     "dev": "node serve.cjs",
-    "check": "node --check app/login/auth.js && node --check app/login/firebase.js && node --check app/home/home-auth.js && node --check app/home/homepage.js && node --check app/account/account.js && node --check serve.cjs"
+    "check": "node --check app/login/auth.js && node --check app/login/firebase.js && node --check app/home/home-auth.js && node --check app/home/homepage.js && node --check app/account/account.js && node --check app/private-chat/chat.js && node --check app/shared/navigation.js && node --check app/random-discussions/server.js && node --check serve.cjs"
   }
 }

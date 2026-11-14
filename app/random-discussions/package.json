@@ -1,0 +1,17 @@
+{
+  "name": "dukdui-spu",
+  "version": "1.0.0",
+  "description": "Random Discussions SPU",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "firebase-admin": "^14.5.1",
+    "socket.io": "^4.8.1"
+  }
+}

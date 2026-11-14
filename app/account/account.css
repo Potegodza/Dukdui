@@ -5,7 +5,7 @@
 body {
     min-height: 100vh;
     margin: 0;
-    padding: 32px 20px;
+    padding: 0;
     background: #0b1020;
     color: #f5f6fa;
     font-family: "IBM Plex Sans Thai", sans-serif;
@@ -20,28 +20,25 @@ body {
     text-align: center;
 }
 
+.account-layout {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    min-height: 100vh;
+}
+
+.account-layout[hidden] {
+    display: none;
+}
+
 .account-page {
     width: min(100%, 1040px);
+    min-width: 0;
     margin: 0 auto;
+    padding: 32px 20px;
 }
 
 .page-header {
-    position: relative;
     margin-bottom: 24px;
-    padding: 12px 0 0 170px;
-}
-
-.back-link {
-    position: absolute;
-    top: 16px;
-    left: 0;
-    color: #aab8d2;
-    font-size: 13px;
-    text-decoration: none;
-}
-
-.back-link:hover {
-    color: #fff;
 }
 
 .eyebrow {
@@ -327,17 +324,13 @@ button:disabled {
     clip-path: inset(50%);
 }
 
-@media (max-width: 760px) {
-    body {
+@media (max-width: 768px) {
+    .account-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .account-page {
         padding: 18px 14px;
-    }
-
-    .page-header {
-        padding: 42px 0 0;
-    }
-
-    .back-link {
-        top: 0;
     }
 
     .account-grid {

@@ -1,0 +1,967 @@
+
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dukdui SPU | Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            background: #091020;
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        button, input, select {
+            font: inherit;
+        }
+
+        .login-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 390px;
+            background: #0f172a;
+            border: 1px solid #263449;
+            border-radius: 18px;
+            padding: 32px;
+        }
+
+        .brand {
+            color: #38bdf8;
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .muted {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .login-card h2 {
+            margin: 24px 0 8px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            background: #091020;
+            border: 1px solid #334155;
+            color: #fff;
+            border-radius: 9px;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: #38bdf8;
+        }
+
+        .login-card input {
+            margin: 18px 0 12px;
+        }
+
+        button {
+            border: 0;
+            border-radius: 9px;
+            padding: 11px 17px;
+            background: #2563eb;
+            color: white;
+            cursor: pointer;
+        }
+
+        button:hover {
+            opacity: .85;
+        }
+
+        button:disabled {
+            opacity: .5;
+            cursor: not-allowed;
+        }
+
+        .login-card button {
+            width: 100%;
+        }
+
+        .error {
+            color: #f87171;
+            font-size: 13px;
+            margin-top: 12px;
+        }
+
+        .dashboard {
+            display: none;
+        }
+
+        .sidebar {
+            position: fixed;
+            inset: 0 auto 0 0;
+            width: 240px;
+            background: #0f172a;
+            border-right: 1px solid #1e293b;
+            padding: 25px 18px;
+        }
+
+        .sidebar .brand {
+            margin-bottom: 35px;
+        }
+
+        .menu {
+            color: #38bdf8;
+            background: #1e293b;
+            padding: 12px;
+            border-radius: 9px;
+            font-size: 14px;
+        }
+
+        .logout {
+            position: absolute;
+            bottom: 25px;
+            left: 18px;
+            right: 18px;
+            background: #334155;
+        }
+
+        .main {
+            margin-left: 240px;
+            padding: 30px;
+            max-width: 1500px;
+        }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            margin-bottom: 28px;
+        }
+
+        .topbar h1 {
+            font-size: 25px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 13px;
+            padding: 20px;
+        }
+
+        .stat p {
+            color: #94a3b8;
+            font-size: 13px;
+        }
+
+        .stat h2 {
+            font-size: 30px;
+            margin-top: 8px;
+        }
+
+        .filters {
+            display: grid;
+            grid-template-columns: 1fr 180px 180px;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .table-card {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 13px;
+            overflow: hidden;
+        }
+
+        .table-head {
+            padding: 18px;
+            border-bottom: 1px solid #1e293b;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 750px;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #1e293b;
+            font-size: 13px;
+        }
+
+        th {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+        }
+
+        .pending {
+            background: #422006;
+            color: #fbbf24;
+        }
+
+        .reviewed {
+            background: #052e16;
+            color: #4ade80;
+        }
+
+        .dismissed {
+            background: #1e293b;
+            color: #cbd5e1;
+        }
+
+        .detail-btn {
+            padding: 7px 11px;
+            font-size: 12px;
+            background: #334155;
+        }
+
+        .empty {
+            text-align: center;
+            color: #94a3b8;
+            padding: 35px;
+        }
+
+        .message {
+            color: #f87171;
+            padding: 15px;
+            font-size: 13px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 10;
+            background: #000b;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-box {
+            width: 100%;
+            max-width: 550px;
+            max-height: 85vh;
+            overflow-y: auto;
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 15px;
+            padding: 24px;
+        }
+
+        .modal-box h2 {
+            margin-bottom: 20px;
+        }
+
+        .detail-row {
+            margin: 14px 0;
+            overflow-wrap: anywhere;
+        }
+
+        .detail-row small {
+            color: #94a3b8;
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .detail-row p {
+            font-size: 14px;
+        }
+
+        .modal-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        .green {
+            background: #15803d;
+        }
+
+        .gray {
+            background: #475569;
+        }
+
+        .note {
+            margin-top: 14px;
+        }
+
+        .history {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #334155;
+        }
+
+        .history-item {
+            font-size: 13px;
+            color: #cbd5e1;
+            margin-top: 10px;
+        }
+
+        @media (max-width: 900px) {
+            .stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .filters {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .filters input {
+                grid-column: 1 / -1;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .sidebar {
+                position: static;
+                width: 100%;
+                padding: 15px;
+            }
+
+            .sidebar .brand {
+                margin: 0;
+            }
+
+            .sidebar .menu {
+                display: none;
+            }
+
+            .logout {
+                position: static;
+                width: 100%;
+                margin-top: 15px;
+            }
+
+            .main {
+                margin: 0;
+                padding: 18px;
+            }
+
+            .topbar h1 {
+                font-size: 20px;
+            }
+
+            .stats {
+                gap: 10px;
+            }
+
+            .stat {
+                padding: 14px;
+            }
+
+            .stat h2 {
+                font-size: 24px;
+            }
+
+            .filters {
+                grid-template-columns: 1fr;
+            }
+
+            .filters input {
+                grid-column: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- LOGIN -->
+    <section class="login-page" id="loginPage">
+        <div class="login-card">
+            <div class="brand">DUKDUI SPU</div>
+            <p class="muted">ADMIN CONTROL PANEL</p>
+
+            <h2>เข้าสู่ระบบผู้ดูแล</h2>
+            <p class="muted">กรุณากรอกรหัสผ่าน Admin</p>
+
+            <form id="loginForm">
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="รหัสผ่าน Admin"
+                    autocomplete="current-password"
+                    required
+                >
+                <button type="submit" id="loginBtn">เข้าสู่ระบบ</button>
+            </form>
+
+            <p class="error" id="loginError"></p>
+        </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <div class="dashboard" id="dashboard">
+        <aside class="sidebar">
+            <div class="brand">DUKDUI SPU</div>
+            <div class="menu">รายงานผู้ใช้งาน</div>
+            <button class="logout" id="logoutBtn">ออกจากระบบ</button>
+        </aside>
+
+        <main class="main">
+            <header class="topbar">
+                <div>
+                    <h1>จัดการรายงาน</h1>
+                    <p class="muted">ตรวจสอบและจัดการรายงานผู้ใช้งาน</p>
+                </div>
+                <button id="refreshBtn">รีเฟรชข้อมูล</button>
+            </header>
+
+            <section class="stats">
+                <div class="stat">
+                    <p>รายงานทั้งหมด</p>
+                    <h2 id="totalCount">0</h2>
+                </div>
+                <div class="stat">
+                    <p>รอตรวจสอบ</p>
+                    <h2 id="pendingCount">0</h2>
+                </div>
+                <div class="stat">
+                    <p>ตรวจสอบแล้ว</p>
+                    <h2 id="reviewedCount">0</h2>
+                </div>
+                <div class="stat">
+                    <p>ไม่พบความผิด</p>
+                    <h2 id="dismissedCount">0</h2>
+                </div>
+            </section>
+
+            <section class="filters">
+                <input id="searchInput" placeholder="ค้นหา ID, UID, Socket ID หรือรายละเอียด">
+                <select id="statusFilter">
+                    <option value="">ทุกสถานะ</option>
+                    <option value="pending">รอตรวจสอบ</option>
+                    <option value="reviewed">ตรวจสอบแล้ว</option>
+                    <option value="dismissed">ไม่พบความผิด</option>
+                </select>
+                <select id="reasonFilter">
+                    <option value="">ทุกเหตุผล</option>
+                    <option value="harassment">คุกคาม / ล่วงละเมิด</option>
+                    <option value="inappropriate">พฤติกรรมไม่เหมาะสม</option>
+                    <option value="sexual">เนื้อหาทางเพศ</option>
+                    <option value="spam">สแปม / โฆษณา</option>
+                    <option value="violence">ข่มขู่ / ความรุนแรง</option>
+                    <option value="other">อื่น ๆ</option>
+                </select>
+            </section>
+
+            <section class="table-card">
+                <div class="table-head">
+                    <strong>รายการรายงาน</strong>
+                    <span class="muted" id="resultCount">0 รายการ</span>
+                </div>
+
+                <div id="tableMessage"></div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>เหตุผล</th>
+                                <th>หัวข้อ</th>
+                                <th>UID ผู้ถูกรายงาน</th><th>ผู้รายงาน</th>
+                                <th>สถานะ</th>
+                                <th>วันที่</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTable"></tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- DETAIL MODAL -->
+    <div class="modal" id="detailModal">
+        <div class="modal-box">
+            <h2>รายละเอียดรายงาน #<span id="detailId"></span></h2>
+
+            <div id="detailContent"></div>
+
+            <div class="note">
+                <label class="muted" for="adminNote">บันทึกของผู้ดูแล</label>
+                <input id="adminNote" maxlength="1000" placeholder="หมายเหตุ (ไม่บังคับ)">
+            </div>
+
+            <div class="modal-actions">
+                <button class="green" id="reviewBtn">ตรวจสอบแล้ว</button>
+                <button class="gray" id="dismissBtn">ไม่พบความผิด</button>
+                <button id="closeModalBtn">ปิด</button>
+            </div>
+
+            <div class="history">
+                <strong>จัดการผู้ใช้ (Firebase UID)</strong>
+                <p class="muted" style="margin:8px 0">ใช้ Firebase UID ที่แสดงในรายงาน รายงานเก่าอาจไม่มี UID</p>
+                <div class="detail-row"><small>UID ผู้ถูกรายงาน</small><p id="targetUid">ไม่มี UID</p></div>
+                <div class="note"><label class="muted" for="moderationReason">เหตุผลในการดำเนินการ</label>
+                    <input id="moderationReason" maxlength="500" placeholder="ระบุเหตุผล (แนะนำ)">
+                </div>
+                <div class="modal-actions">
+                    <button class="gray" id="warnUserBtn">ส่งคำเตือน</button>
+                    <button id="ban1hBtn" style="background:#b45309">แบน 1 ชั่วโมง</button>
+                    <button id="ban1dBtn" style="background:#b45309">แบน 1 วัน</button>
+                    <button id="ban7dBtn" style="background:#b45309">แบน 7 วัน</button>
+                    <button id="banPermanentBtn" style="background:#991b1b">แบนถาวร</button>
+                    <button class="green" id="unbanUserBtn">ปลดแบน</button>
+                </div>
+                <div id="moderationHistory" class="muted" style="margin-top:10px">ประวัติการดูแลผู้ใช้จะแสดงที่นี่</div>
+            </div>
+            <div class="history">
+                <strong>ประวัติการจัดการ</strong>
+                <div id="historyContent" class="muted">กำลังโหลด...</div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const loginPage = document.getElementById('loginPage');
+    const dashboard = document.getElementById('dashboard');
+    const loginForm = document.getElementById('loginForm');
+    const loginError = document.getElementById('loginError');
+    const loginBtn = document.getElementById('loginBtn');
+
+    const reportTable = document.getElementById('reportTable');
+    const tableMessage = document.getElementById('tableMessage');
+
+    const detailModal = document.getElementById('detailModal');
+
+    let reports = [];
+    let selectedReport = null;
+
+    const reasonNames = {
+        harassment: 'คุกคาม / ล่วงละเมิด',
+        inappropriate: 'พฤติกรรมไม่เหมาะสม',
+        sexual: 'เนื้อหาทางเพศ',
+        spam: 'สแปม / โฆษณา',
+        violence: 'ข่มขู่ / ความรุนแรง',
+        other: 'อื่น ๆ'
+    };
+
+    const topicNames = {
+        study: 'การเรียน',
+        university: 'มหาวิทยาลัย',
+        career: 'อาชีพ',
+        technology: 'เทคโนโลยี',
+        lifestyle: 'ไลฟ์สไตล์'
+    };
+
+    const statusNames = {
+        pending: 'รอตรวจสอบ',
+        reviewed: 'ตรวจสอบแล้ว',
+        dismissed: 'ไม่พบความผิด'
+    };
+
+    function escapeHTML(value) {
+        return String(value ?? '').replace(/[&<>"']/g, char => ({
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        })[char]);
+    }
+
+    function validUid(uid) {
+        return typeof uid === 'string'
+            && uid.length > 0
+            && uid.length <= 128
+            && uid.trim() === uid
+            && !/[\u0000-\u001f\u007f/]/.test(uid);
+    }
+
+    async function api(url, options = {}) {
+        const response = await fetch(url, {
+            ...options,
+            credentials: 'same-origin',
+            headers: {
+                ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+                ...options.headers
+            }
+        });
+
+        const data = await response.json().catch(() => ({}));
+
+        if (response.status === 401) {
+            showLogin();
+            throw new Error('เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่');
+        }
+
+        if (!response.ok) {
+            throw new Error(data.message || 'เกิดข้อผิดพลาด');
+        }
+
+        return data;
+    }
+
+    function showLogin() {
+        loginPage.style.display = 'flex';
+        dashboard.style.display = 'none';
+    }
+
+    function showDashboard() {
+        loginPage.style.display = 'none';
+        dashboard.style.display = 'block';
+    }
+
+    loginForm.addEventListener('submit', async event => {
+        event.preventDefault();
+
+        loginError.textContent = '';
+        loginBtn.disabled = true;
+        loginBtn.textContent = 'กำลังเข้าสู่ระบบ...';
+
+        try {
+            const password = document.getElementById('password').value;
+
+            await api('/api/admin/login', {
+                method: 'POST',
+                body: JSON.stringify({ password })
+            });
+
+            document.getElementById('password').value = '';
+
+            showDashboard();
+            await loadDashboard();
+
+        } catch (error) {
+            loginError.textContent = error.message;
+        } finally {
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'เข้าสู่ระบบ';
+        }
+    });
+
+    document.getElementById('logoutBtn').onclick = async () => {
+        try {
+            await api('/api/admin/logout', { method: 'POST' });
+        } finally {
+            showLogin();
+        }
+    };
+
+    async function loadDashboard() {
+        tableMessage.textContent = 'กำลังโหลดข้อมูล...';
+
+        try {
+            const statsData = await api('/api/admin/stats');
+
+            document.getElementById('totalCount').textContent = statsData.stats.total;
+            document.getElementById('pendingCount').textContent = statsData.stats.pending;
+            document.getElementById('reviewedCount').textContent = statsData.stats.reviewed;
+            document.getElementById('dismissedCount').textContent = statsData.stats.dismissed;
+
+            await loadReports();
+
+        } catch (error) {
+            tableMessage.textContent = error.message;
+        }
+    }
+
+    async function loadReports() {
+        const params = new URLSearchParams();
+
+        const search = document.getElementById('searchInput').value.trim();
+        const status = document.getElementById('statusFilter').value;
+        const reason = document.getElementById('reasonFilter').value;
+
+        if (search) params.set('search', search);
+        if (status) params.set('status', status);
+        if (reason) params.set('reason', reason);
+
+        try {
+            const data = await api('/api/admin/reports?' + params.toString());
+
+            reports = data.reports;
+
+            renderReports();
+
+            tableMessage.textContent = '';
+
+        } catch (error) {
+            tableMessage.textContent = error.message;
+        }
+    }
+
+    function renderReports() {
+        document.getElementById('resultCount').textContent =
+            reports.length + ' รายการ';
+
+        if (reports.length === 0) {
+            reportTable.innerHTML = `
+                <tr>
+                    <td colspan="8" class="empty">ไม่พบรายการรายงาน</td>
+                </tr>
+            `;
+            return;
+        }
+
+        reportTable.innerHTML = reports.map(report => `
+            <tr>
+                <td>#${escapeHTML(report.id)}</td>
+                <td>${escapeHTML(reasonNames[report.reason] || report.reason)}</td>
+                <td>${escapeHTML(topicNames[report.topic] || report.topic)}</td>
+                <td>${escapeHTML(report.reported_uid || 'ไม่มี UID')}</td>
+                <td>${escapeHTML(report.reporter_socket_id)}</td>
+                <td>
+                    <span class="status ${escapeHTML(report.status)}">
+                        ${escapeHTML(statusNames[report.status] || report.status)}
+                    </span>
+                </td>
+                <td>${escapeHTML(report.created_at)}</td>
+                <td>
+                    <button class="detail-btn" data-id="${escapeHTML(report.id)}">
+                        ดูรายละเอียด
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    reportTable.addEventListener('click', event => {
+        const button = event.target.closest('button[data-id]');
+
+        if (!button) return;
+
+        const report = reports.find(
+            item => String(item.id) === button.dataset.id
+        );
+
+        if (report) openDetail(report);
+    });
+
+    async function openDetail(report) {
+        selectedReport = report;
+
+        document.getElementById('detailId').textContent = report.id;
+
+        document.getElementById('detailContent').innerHTML = `
+            <div class="detail-row">
+                <small>เหตุผล</small>
+                <p>${escapeHTML(reasonNames[report.reason] || report.reason)}</p>
+            </div>
+
+            <div class="detail-row">
+                <small>รายละเอียด</small>
+                <p>${escapeHTML(report.detail || 'ไม่มีรายละเอียดเพิ่มเติม')}</p>
+            </div>
+
+            <div class="detail-row">
+                <small>หัวข้อสนทนา</small>
+                <p>${escapeHTML(topicNames[report.topic] || report.topic)}</p>
+            </div>
+
+            <div class="detail-row">
+                <small>ผู้รายงาน</small>
+                <p>${escapeHTML(report.reporter_socket_id)}</p>
+            </div>
+
+            <div class="detail-row">
+                <small>ผู้ถูกรายงาน</small>
+                <p>${escapeHTML(report.reported_socket_id)}</p>
+            </div>
+            <div class="detail-row">
+                <small>UID ผู้ถูกรายงาน</small>
+                <p>${escapeHTML(report.reported_uid || 'ไม่มี UID (รายงานเก่า)')}</p>
+            </div>
+
+            <div class="detail-row">
+                <small>วันที่รายงาน</small>
+                <p>${escapeHTML(report.created_at)}</p>
+            </div>
+
+            <div class="detail-row">
+                <small>สถานะ</small>
+                <p>${escapeHTML(statusNames[report.status] || report.status)}</p>
+            </div>
+        `;
+
+        document.getElementById('adminNote').value = '';
+        document.getElementById('moderationReason').value = '';
+        document.getElementById('targetUid').textContent = report.reported_uid || 'ไม่มี UID';
+        document.getElementById('moderationHistory').textContent = 'กำลังโหลดประวัติ...';
+        loadModerationHistory(report.reported_uid);
+        document.getElementById('historyContent').textContent = 'กำลังโหลด...';
+
+        detailModal.style.display = 'flex';
+
+        await loadHistory(report.id);
+    }
+
+    async function loadHistory(id) {
+        try {
+            const data = await api(`/api/admin/reports/${encodeURIComponent(id)}/actions`);
+
+            const history = document.getElementById('historyContent');
+
+            if (!data.actions.length) {
+                history.textContent = 'ยังไม่มีประวัติการจัดการ';
+                return;
+            }
+
+            history.innerHTML = data.actions.map(item => `
+                <div class="history-item">
+                    ${escapeHTML(statusNames[item.old_status] || item.old_status || 'เริ่มต้น')}
+                    →
+                    ${escapeHTML(statusNames[item.new_status] || item.new_status)}
+                    <br>
+                    <small>${escapeHTML(item.created_at)}</small>
+                    <br>
+                    ${escapeHTML(item.note || '')}
+                </div>
+            `).join('');
+
+        } catch (error) {
+            document.getElementById('historyContent').textContent = error.message;
+        }
+    }
+
+    async function loadModerationHistory(uid) {
+        const box = document.getElementById('moderationHistory');
+        if (!validUid(uid)) {
+            box.textContent = 'รายงานนี้ไม่มี UID จึงยังจัดการแบนด้วย UID ไม่ได้';
+            return;
+        }
+        try {
+            const data = await api(`/api/admin/users/${encodeURIComponent(uid)}/actions`);
+            const active = data.sanction;
+            const rows = data.actions || [];
+            const names = { warn: 'เตือน', ban: 'แบน', unban: 'ปลดแบน' };
+            box.innerHTML = `<p>${active?.action === 'ban' ? 'สถานะปัจจุบัน: ถูกแบน' : 'สถานะปัจจุบัน: ไม่ถูกแบน'}</p>` +
+                (rows.length ? rows.map(item => `<div class="history-item">${escapeHTML(names[item.action] || item.action)} — ${escapeHTML(item.reason || '-')}<br><small>${escapeHTML(item.created_at)}</small></div>`).join('') : '<p>ยังไม่มีประวัติ</p>');
+        } catch (error) { box.textContent = error.message; }
+    }
+
+    async function moderateUser(action, duration = '') {
+        const uid = selectedReport?.reported_uid;
+        if (!validUid(uid)) {
+            alert('รายงานนี้ไม่มี UID ผู้ถูกรายงาน (อาจเป็นรายงานเก่าก่อนเพิ่มระบบ UID)');
+            return;
+        }
+        const labels = { warn: 'ส่งคำเตือน', ban: 'แบนผู้ใช้', unban: 'ปลดแบน' };
+        if (!confirm(`${labels[action]} UID ${uid} ใช่หรือไม่?`)) return;
+        try {
+            const data = await api(`/api/admin/users/${encodeURIComponent(uid)}/action`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    action, duration,
+                    reason: document.getElementById('moderationReason').value.trim()
+                })
+            });
+            alert(data.message);
+            await loadModerationHistory(uid);
+        } catch (error) { alert(error.message); }
+    }
+
+    document.getElementById('warnUserBtn').onclick = () => moderateUser('warn');
+    document.getElementById('ban1hBtn').onclick = () => moderateUser('ban', '1h');
+    document.getElementById('ban1dBtn').onclick = () => moderateUser('ban', '1d');
+    document.getElementById('ban7dBtn').onclick = () => moderateUser('ban', '7d');
+    document.getElementById('banPermanentBtn').onclick = () => moderateUser('ban', 'permanent');
+    document.getElementById('unbanUserBtn').onclick = () => moderateUser('unban');
+
+    async function updateStatus(status) {
+        if (!selectedReport) return;
+
+        const note = document.getElementById('adminNote').value;
+
+        try {
+            await api(`/api/admin/reports/${encodeURIComponent(selectedReport.id)}/status`, {
+                method: 'PATCH',
+                body: JSON.stringify({ status, note })
+            });
+
+            alert('อัปเดตสถานะเรียบร้อยแล้ว');
+
+            detailModal.style.display = 'none';
+
+            await loadDashboard();
+
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    document.getElementById('reviewBtn').onclick = () => {
+        updateStatus('reviewed');
+    };
+
+    document.getElementById('dismissBtn').onclick = () => {
+        updateStatus('dismissed');
+    };
+
+    document.getElementById('closeModalBtn').onclick = () => {
+        detailModal.style.display = 'none';
+    };
+
+    detailModal.onclick = event => {
+        if (event.target === detailModal) {
+            detailModal.style.display = 'none';
+        }
+    };
+
+    document.getElementById('refreshBtn').onclick = loadDashboard;
+
+    document.getElementById('statusFilter').onchange = loadReports;
+    document.getElementById('reasonFilter').onchange = loadReports;
+
+    let searchTimer;
+
+    document.getElementById('searchInput').oninput = () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(loadReports, 300);
+    };
+
+    // ตรวจสอบว่ามี Session อยู่แล้วหรือไม่
+    async function checkSession() {
+        try {
+            await api('/api/admin/stats');
+            showDashboard();
+            await loadDashboard();
+        } catch {
+            showLogin();
+        }
+    }
+
+    checkSession();
+</script>
+
+</body>
+</html>
