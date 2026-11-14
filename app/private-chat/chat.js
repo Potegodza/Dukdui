@@ -27,6 +27,23 @@ const messageInput = document.getElementById("messageInput");
 const sendBtn = document.getElementById("sendBtn");
 const removeFriendBtn = document.getElementById("removeFriendBtn");
 const blockFriendBtn = document.getElementById("blockFriendBtn");
+const audioCallBtn = document.getElementById("audioCallBtn");
+const videoCallBtn = document.getElementById("videoCallBtn");
+const callModal = document.getElementById("callModal");
+const callTitle = document.getElementById("callTitle");
+const callStatus = document.getElementById("callStatus");
+const callVideoStage = document.getElementById("callVideoStage");
+const callAudioStage = document.getElementById("callAudioStage");
+const remoteCallVideo = document.getElementById("remoteCallVideo");
+const localCallVideo = document.getElementById("localCallVideo");
+const remoteCallAudio = document.getElementById("remoteCallAudio");
+const audioCallName = document.getElementById("audioCallName");
+const acceptCallBtn = document.getElementById("acceptCallBtn");
+const declineCallBtn = document.getElementById("declineCallBtn");
+const cancelCallBtn = document.getElementById("cancelCallBtn");
+const toggleMicBtn = document.getElementById("toggleMicBtn");
+const toggleCameraBtn = document.getElementById("toggleCameraBtn");
+const endCallBtn = document.getElementById("endCallBtn");
 const friendActionDialog = document.getElementById("friendActionDialog");
 const friendActionTitle = document.getElementById("friendActionTitle");
 const friendActionMessage = document.getElementById("friendActionMessage");
@@ -42,12 +59,28 @@ let friendFilters = { hiddenMatchIds: new Set(), blockedUserIds: new Set() };
 let pendingFriendAction = null;
 let selectingInitialContact = true;
 let sendingMessage = false;
+let callSocket = null;
+let activeCall = null;
+let localCallStream = null;
+let callPeerConnection = null;
+let waitingCallCandidates = [];
 const latestMessageUnsubscribers = new Map();
 const requestedMatchId = new URLSearchParams(window.location.search).get("match");
 
 function setConnectionStatus(text, isError = false) {
   connectionStatus.textContent = text;
   connectionStatus.dataset.state = isError ? "error" : "success";
+}
+
+function updateCallButtons() {
+  const canCall = Boolean(
+    currentUser
+    && currentActiveContactId
+    && callSocket?.connected
+    && !activeCall
+  );
+  audioCallBtn.disabled = !canCall;
+  videoCallBtn.disabled = !canCall;
 }
 
 function getFirestoreErrorMessage(error) {
@@ -170,6 +203,7 @@ function selectContact(contact) {
   sendBtn.disabled = false;
   removeFriendBtn.disabled = false;
   blockFriendBtn.disabled = false;
+  updateCallButtons();
   showMessageState("กำลังโหลดข้อความ...");
 
   stopMessageListener();
@@ -219,33 +253,43 @@ function subscribeToLatestMessage(contact) {
 function handleMatchesSnapshot(snapshot) {
   latestMatchesSnapshot = snapshot;
   const previousContacts = new Map(contactsData.map((contact) => [contact.id, contact]));
-  contactsData = snapshot.docs.flatMap((matchDocument) => {
-    const match = matchDocument.data();
-    if (
-      !Array.isArray(match.participants)
-      || match.participants.length !== 2
-      || !match.participants.includes(currentUser.uid)
-      || friendFilters.hiddenMatchIds.has(matchDocument.id)
-    ) {
-      return [];
-    }
+  const seenFriendUids = new Set();
+  contactsData = [...snapshot.docs]
+    .sort((first, second) =>
+      String(second.get("createdAt") || "").localeCompare(String(first.get("createdAt") || ""))
+      || first.id.localeCompare(second.id)
+    )
+    .flatMap((matchDocument) => {
+      const match = matchDocument.data();
+      if (
+        !Array.isArray(match.participants)
+        || match.participants.length !== 2
+        || !match.participants.includes(currentUser.uid)
+      ) {
+        return [];
+      }
 
-    const otherUserId = match.participants.find((uid) => uid !== currentUser.uid);
-    if (!otherUserId || friendFilters.blockedUserIds.has(otherUserId)) return [];
+      const otherUserId = match.participants.find((uid) => uid !== currentUser.uid);
+      if (!otherUserId || seenFriendUids.has(otherUserId)) return [];
+      seenFriendUids.add(otherUserId);
+      if (
+        friendFilters.hiddenMatchIds.has(matchDocument.id)
+        || friendFilters.blockedUserIds.has(otherUserId)
+      ) return [];
 
-    const previous = previousContacts.get(matchDocument.id);
-    const names = match.participantNames;
-    const displayName = names && typeof names[otherUserId] === "string"
-      ? names[otherUserId].trim()
-      : "";
-    return [{
-      id: matchDocument.id,
-      uid: otherUserId,
-      name: displayName || "เพื่อน Dukdui",
-      lastMsg: previous?.lastMsg || "เริ่มส่งข้อความ",
-      time: previous?.time || ""
-    }];
-  });
+      const previous = previousContacts.get(matchDocument.id);
+      const names = match.participantNames;
+      const displayName = names && typeof names[otherUserId] === "string"
+        ? names[otherUserId].trim()
+        : "";
+      return [{
+        id: matchDocument.id,
+        uid: otherUserId,
+        name: displayName || "เพื่อน Dukdui",
+        lastMsg: previous?.lastMsg || "เริ่มส่งข้อความ",
+        time: previous?.time || ""
+      }];
+    });
 
   const activeIds = new Set(contactsData.map((contact) => contact.id));
   for (const [matchId, unsubscribe] of latestMessageUnsubscribers) {
@@ -259,6 +303,7 @@ function handleMatchesSnapshot(snapshot) {
   }
 
   if (currentActiveContactId && !activeIds.has(currentActiveContactId)) {
+    endCallForMatch(currentActiveContactId);
     stopMessageListener();
     currentActiveContactId = null;
     activeChatName.textContent = "เลือกเพื่อนเพื่อเริ่มแชท";
@@ -271,6 +316,7 @@ function handleMatchesSnapshot(snapshot) {
     showMessageState("ห้องสนทนานี้ไม่พร้อมใช้งานแล้ว");
   }
 
+  updateCallButtons();
   renderContacts();
   setConnectionStatus("เชื่อมต่อแชทแล้ว");
 
@@ -310,6 +356,7 @@ async function confirmFriendAction() {
 
   try {
     await updateFriend(currentUser, contact.id, action);
+    endCallForMatch(contact.id);
     friendFilters.hiddenMatchIds.add(contact.id);
     if (action === "block") friendFilters.blockedUserIds.add(contact.uid);
     friendActionDialog.close();
@@ -366,16 +413,420 @@ messageInput.addEventListener("keydown", (event) => {
   }
 });
 
-const videoModal = document.getElementById("videoModal");
-document.getElementById("videoCallBtn").addEventListener("click", () => {
-  if (!currentActiveContactId) {
-    alert("กรุณาเลือกเพื่อนที่แมตช์แล้วก่อน");
+const callIceConfiguration = {
+  iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+};
+
+function renderCallState() {
+  if (!activeCall) {
+    callModal.hidden = true;
+    acceptCallBtn.hidden = true;
+    declineCallBtn.hidden = true;
+    cancelCallBtn.hidden = true;
+    toggleMicBtn.hidden = true;
+    toggleCameraBtn.hidden = true;
+    endCallBtn.hidden = true;
+    updateCallButtons();
     return;
   }
-  videoModal.style.display = "flex";
+
+  const isIncoming = activeCall.role === "callee"
+    && ["incoming", "accepting"].includes(activeCall.status);
+  const canCancelCaller = activeCall.role === "caller"
+    && ["starting", "ringing"].includes(activeCall.status);
+  const isActive = activeCall.status === "active";
+  const showVideo = activeCall.callType === "video"
+    && activeCall.status !== "incoming";
+
+  callModal.hidden = false;
+  callTitle.textContent = activeCall.callType === "video" ? "วิดีโอคอล" : "โทรเสียง";
+  callStatus.textContent = activeCall.statusMessage || "";
+  audioCallName.textContent = activeCall.displayName;
+  callVideoStage.hidden = !showVideo;
+  callAudioStage.hidden = showVideo;
+  localCallVideo.srcObject = activeCall.callType === "video" ? localCallStream : null;
+  acceptCallBtn.hidden = !isIncoming;
+  acceptCallBtn.disabled = activeCall.status === "accepting";
+  declineCallBtn.hidden = !isIncoming;
+  cancelCallBtn.hidden = !canCancelCaller;
+  toggleMicBtn.hidden = !isActive;
+  toggleCameraBtn.hidden = !isActive || activeCall.callType !== "video";
+  endCallBtn.hidden = !isActive;
+  toggleMicBtn.textContent = localCallStream?.getAudioTracks()[0]?.enabled === false
+    ? "เปิดไมค์"
+    : "ปิดไมค์";
+  toggleCameraBtn.textContent = localCallStream?.getVideoTracks()[0]?.enabled === false
+    ? "เปิดกล้อง"
+    : "ปิดกล้อง";
+  updateCallButtons();
+}
+
+function closeCallUi() {
+  if (callPeerConnection) {
+    callPeerConnection.close();
+    callPeerConnection = null;
+  }
+  for (const track of localCallStream?.getTracks() || []) {
+    track.stop();
+  }
+  localCallStream = null;
+  waitingCallCandidates = [];
+  remoteCallVideo.srcObject = null;
+  localCallVideo.srcObject = null;
+  remoteCallAudio.srcObject = null;
+  activeCall = null;
+  renderCallState();
+}
+
+function endActiveCall() {
+  const call = activeCall;
+  if (!call) return;
+
+  if (call.callId && callSocket?.connected) {
+    if (call.role === "caller" && call.status === "ringing") {
+      callSocket.emit("call:cancel", { callId: call.callId });
+    } else if (call.role === "callee" && call.status !== "active") {
+      callSocket.emit("call:decline", { callId: call.callId });
+    } else {
+      callSocket.emit("call:hangup", { callId: call.callId });
+    }
+  }
+  closeCallUi();
+}
+
+function endCallForMatch(matchId) {
+  if (activeCall?.matchId === matchId) endActiveCall();
+}
+
+function isCurrentCall(callId) {
+  if (
+    activeCall?.role === "caller"
+    && activeCall.status === "starting"
+    && !activeCall.callId
+  ) {
+    activeCall.callId = callId;
+  }
+  return Boolean(activeCall && activeCall.callId === callId);
+}
+
+function createCallPeerConnection() {
+  const call = activeCall;
+  const peerConnection = new RTCPeerConnection(callIceConfiguration);
+  callPeerConnection = peerConnection;
+  for (const track of localCallStream.getTracks()) {
+    peerConnection.addTrack(track, localCallStream);
+  }
+
+  peerConnection.onicecandidate = (event) => {
+    if (event.candidate && activeCall === call && call.callId && callSocket?.connected) {
+      callSocket.emit("call:signal", {
+        callId: call.callId,
+        signal: { candidate: event.candidate.toJSON() }
+      });
+    }
+  };
+  peerConnection.ontrack = (event) => {
+    const stream = event.streams[0];
+    if (!stream || activeCall !== call) return;
+    if (call.callType === "video") {
+      remoteCallVideo.srcObject = stream;
+      remoteCallVideo.play().catch((error) => {
+        console.error("เล่นวิดีโอจากเพื่อนไม่สำเร็จ", error);
+      });
+    } else {
+      remoteCallAudio.srcObject = stream;
+      remoteCallAudio.play().catch((error) => {
+        console.error("เล่นเสียงจากเพื่อนไม่สำเร็จ", error);
+      });
+    }
+    call.statusMessage = "เชื่อมต่อแล้ว";
+    callStatus.textContent = call.statusMessage;
+  };
+  peerConnection.onconnectionstatechange = () => {
+    if (activeCall === call && peerConnection.connectionState === "failed") {
+      setConnectionStatus("การเชื่อมต่อสายล้มเหลว กรุณาวางสายแล้วลองอีกครั้ง", true);
+    }
+  };
+  return peerConnection;
+}
+
+async function handleCallSignal(data) {
+  if (
+    !activeCall
+    || data?.callId !== activeCall.callId
+    || !callPeerConnection
+  ) return;
+
+  const peerConnection = callPeerConnection;
+  try {
+    if (data.signal?.description) {
+      await peerConnection.setRemoteDescription(data.signal.description);
+      if (callPeerConnection !== peerConnection) return;
+
+      for (const candidate of waitingCallCandidates) {
+        await peerConnection.addIceCandidate(candidate);
+      }
+      waitingCallCandidates = [];
+
+      if (data.signal.description.type === "offer") {
+        const answer = await peerConnection.createAnswer();
+        await peerConnection.setLocalDescription(answer);
+        if (callPeerConnection !== peerConnection || !activeCall) return;
+        callSocket.emit("call:signal", {
+          callId: activeCall.callId,
+          signal: { description: peerConnection.localDescription }
+        });
+      }
+    } else if (data.signal?.candidate) {
+      if (peerConnection.remoteDescription) {
+        await peerConnection.addIceCandidate(data.signal.candidate);
+      } else {
+        waitingCallCandidates.push(data.signal.candidate);
+      }
+    }
+  } catch (error) {
+    console.error("ส่งสัญญาณวิดีโอคอลไม่สำเร็จ", error);
+    setConnectionStatus("เชื่อมต่อสายไม่สำเร็จ กรุณาวางสายแล้วลองอีกครั้ง", true);
+  }
+}
+
+async function startCall(callType) {
+  if (!currentActiveContactId || !callSocket?.connected || activeCall) return;
+  const contact = contactsData.find((item) => item.id === currentActiveContactId);
+  if (!contact) return;
+
+  activeCall = {
+    callId: null,
+    matchId: contact.id,
+    callType,
+    role: "caller",
+    displayName: contact.name,
+    status: "starting",
+    statusMessage: `กำลังเรียก ${contact.name}...`
+  };
+  const call = activeCall;
+  renderCallState();
+
+  let mediaStream;
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: callType === "video"
+    });
+  } catch (error) {
+    console.error("เปิดไมโครโฟนหรือกล้องไม่สำเร็จ", error);
+    if (activeCall === call) {
+      closeCallUi();
+      setConnectionStatus("เปิดไมโครโฟนหรือกล้องไม่ได้ กรุณาอนุญาตสิทธิ์แล้วลองอีกครั้ง", true);
+    }
+    return;
+  }
+
+  if (activeCall !== call || !callSocket?.connected) {
+    for (const track of mediaStream.getTracks()) track.stop();
+    return;
+  }
+
+  localCallStream = mediaStream;
+  renderCallState();
+
+  callSocket.timeout(10000).emit(
+    "call:start",
+    { matchId: contact.id, callType },
+    (timeoutError, response) => {
+      if (activeCall !== call) return;
+      if (timeoutError || !response?.success) {
+        const message = response?.message || "เริ่มสายโทรไม่สำเร็จ กรุณาลองอีกครั้ง";
+        closeCallUi();
+        setConnectionStatus(message, true);
+        return;
+      }
+      activeCall.callId = response.callId;
+      if (activeCall.status === "starting") {
+        activeCall.status = "ringing";
+        renderCallState();
+      }
+    }
+  );
+}
+
+async function acceptIncomingCall() {
+  const call = activeCall;
+  if (!call || call.role !== "callee" || call.status !== "incoming") return;
+  call.status = "accepting";
+  call.statusMessage = "กำลังเปิดไมโครโฟนและกล้อง...";
+  renderCallState();
+
+  let mediaStream;
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({
+      audio: true,
+      video: call.callType === "video"
+    });
+  } catch (error) {
+    console.error("เปิดไมโครโฟนหรือกล้องไม่สำเร็จ", error);
+    if (activeCall !== call) return;
+    if (callSocket?.connected) callSocket.emit("call:decline", { callId: call.callId });
+    closeCallUi();
+    setConnectionStatus("รับสายไม่ได้ เพราะไม่สามารถเปิดไมโครโฟนหรือกล้อง", true);
+    return;
+  }
+
+  if (activeCall !== call) {
+    for (const track of mediaStream.getTracks()) track.stop();
+    return;
+  }
+  localCallStream = mediaStream;
+
+  try {
+    createCallPeerConnection();
+  } catch (error) {
+    console.error("เตรียมการเชื่อมต่อสายไม่สำเร็จ", error);
+    if (callSocket?.connected) callSocket.emit("call:decline", { callId: call.callId });
+    closeCallUi();
+    setConnectionStatus("เตรียมการโทรไม่สำเร็จ กรุณาลองอีกครั้ง", true);
+    return;
+  }
+
+  callSocket.timeout(10000).emit("call:accept", { callId: call.callId }, (timeoutError, response) => {
+    if (activeCall !== call) return;
+    if (timeoutError || !response?.success) {
+      const message = response?.message || "รับสายไม่สำเร็จ กรุณาลองอีกครั้ง";
+      if (callSocket?.connected) {
+        callSocket.emit("call:decline", { callId: call.callId });
+        callSocket.emit("call:hangup", { callId: call.callId });
+      }
+      closeCallUi();
+      setConnectionStatus(message, true);
+      return;
+    }
+    call.status = "active";
+    call.statusMessage = "กำลังเชื่อมต่อ...";
+    renderCallState();
+  });
+}
+
+function connectCallSocket(user) {
+  if (typeof window.io !== "function") {
+    setConnectionStatus("โหลดระบบโทรไม่สำเร็จ กรุณาโหลดหน้าใหม่", true);
+    return;
+  }
+
+  fetch("/api/client-config")
+    .then(async (response) => {
+      const config = await response.json();
+      if (!response.ok || !config.success) {
+        throw new Error(config.message || "โหลดการตั้งค่าโทรไม่สำเร็จ");
+      }
+      return config.socketOrigin;
+    })
+    .then((socketOrigin) => {
+      if (auth.currentUser?.uid !== user.uid) return;
+      callSocket = window.io(socketOrigin || window.location.origin, {
+        autoConnect: false,
+        auth: (callback) => {
+          const currentAuthUser = auth.currentUser;
+          if (!currentAuthUser) {
+            callback({});
+            return;
+          }
+          currentAuthUser.getIdToken()
+            .then((token) => callback({ token }))
+            .catch((error) => {
+              console.error("ตรวจสอบบัญชีสำหรับระบบโทรไม่สำเร็จ", error);
+              callback({});
+            });
+        }
+      });
+
+      callSocket.on("connect", updateCallButtons);
+      callSocket.on("connect_error", (error) => {
+        console.error("เชื่อมต่อระบบโทรไม่สำเร็จ", error);
+        updateCallButtons();
+        if (activeCall) closeCallUi();
+        setConnectionStatus("เชื่อมต่อระบบโทรไม่ได้ กรุณาโหลดหน้าใหม่", true);
+      });
+      callSocket.on("disconnect", () => {
+        if (activeCall) closeCallUi();
+        updateCallButtons();
+      });
+      callSocket.on("call:incoming", (data) => {
+        if (activeCall) {
+          callSocket.emit("call:decline", { callId: data.callId });
+          return;
+        }
+        activeCall = {
+          callId: data.callId,
+          matchId: data.matchId,
+          callType: data.callType,
+          role: "callee",
+          displayName: data.callerName || "เพื่อน",
+          status: "incoming",
+          statusMessage: data.callType === "video" ? "มีสายวิดีโอเข้า" : "มีสายโทรเข้า"
+        };
+        renderCallState();
+      });
+      callSocket.on("call:taken", ({ callId } = {}) => {
+        if (activeCall?.callId !== callId || activeCall.role !== "callee") return;
+        closeCallUi();
+      });
+      callSocket.on("call:accepted", async ({ callId } = {}) => {
+        if (!isCurrentCall(callId) || activeCall.role !== "caller") return;
+        activeCall.status = "active";
+        activeCall.statusMessage = "กำลังเชื่อมต่อ...";
+        renderCallState();
+        try {
+          const peerConnection = createCallPeerConnection();
+          const offer = await peerConnection.createOffer();
+          await peerConnection.setLocalDescription(offer);
+          if (callPeerConnection !== peerConnection || !activeCall) return;
+          callSocket.emit("call:signal", {
+            callId,
+            signal: { description: peerConnection.localDescription }
+          });
+        } catch (error) {
+          console.error("เริ่มการเชื่อมต่อสายไม่สำเร็จ", error);
+          setConnectionStatus("เริ่มการเชื่อมต่อสายไม่สำเร็จ กรุณาลองอีกครั้ง", true);
+          endActiveCall();
+        }
+      });
+      callSocket.on("call:rejected", ({ callId, message } = {}) => {
+        if (!isCurrentCall(callId)) return;
+        closeCallUi();
+        setConnectionStatus(message || "อีกฝ่ายปฏิเสธสาย");
+      });
+      callSocket.on("call:ended", ({ callId, message } = {}) => {
+        if (!isCurrentCall(callId)) return;
+        closeCallUi();
+        setConnectionStatus(message || "อีกฝ่ายวางสายแล้ว");
+      });
+      callSocket.on("call:signal", handleCallSignal);
+      callSocket.connect();
+    })
+    .catch((error) => {
+      console.error("โหลดการตั้งค่าระบบโทรไม่สำเร็จ", error);
+      updateCallButtons();
+      setConnectionStatus("โหลดระบบโทรไม่สำเร็จ กรุณาโหลดหน้าใหม่", true);
+    });
+}
+
+audioCallBtn.addEventListener("click", () => startCall("audio"));
+videoCallBtn.addEventListener("click", () => startCall("video"));
+acceptCallBtn.addEventListener("click", acceptIncomingCall);
+declineCallBtn.addEventListener("click", endActiveCall);
+cancelCallBtn.addEventListener("click", endActiveCall);
+endCallBtn.addEventListener("click", endActiveCall);
+toggleMicBtn.addEventListener("click", () => {
+  const audioTrack = localCallStream?.getAudioTracks()[0];
+  if (!audioTrack) return;
+  audioTrack.enabled = !audioTrack.enabled;
+  toggleMicBtn.textContent = audioTrack.enabled ? "ปิดไมค์" : "เปิดไมค์";
 });
-document.getElementById("closeVideoBtn").addEventListener("click", () => {
-  videoModal.style.display = "none";
+toggleCameraBtn.addEventListener("click", () => {
+  const videoTrack = localCallStream?.getVideoTracks()[0];
+  if (!videoTrack) return;
+  videoTrack.enabled = !videoTrack.enabled;
+  toggleCameraBtn.textContent = videoTrack.enabled ? "ปิดกล้อง" : "เปิดกล้อง";
 });
 removeFriendBtn.addEventListener("click", () => openFriendAction("remove"));
 blockFriendBtn.addEventListener("click", () => openFriendAction("block"));
@@ -409,6 +860,7 @@ onAuthStateChanged(
     }
 
     if (auth.currentUser?.uid !== user.uid) return;
+    connectCallSocket(user);
     const matchesQuery = query(
       collection(db, "matches"),
       where("participants", "array-contains", user.uid)

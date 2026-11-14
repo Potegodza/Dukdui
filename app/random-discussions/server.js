@@ -7,6 +7,7 @@ const { Server } = require('socket.io');
 const { applicationDefault, cert, initializeApp } = require('firebase-admin/app');
 const { getAuth } = require('firebase-admin/auth');
 const { getFirestore } = require('firebase-admin/firestore');
+const { getFriendshipId, registerLike } = require('./friendships');
 
 const app = express();
 const server = http.createServer(app);
@@ -420,6 +421,44 @@ function validUid(uid) {
         && !/[\u0000-\u001f\u007f/]/.test(uid);
 }
 
+async function findExistingFriendship(firstUid, secondUid) {
+    const snapshot = await firestore.collection('matches')
+        .where('participants', 'array-contains', firstUid)
+        .get();
+    const existing = snapshot.docs
+        .filter((document) => {
+            const participants = document.get('participants');
+            return Array.isArray(participants)
+                && participants.length === 2
+                && participants.includes(secondUid);
+        })
+        .sort((first, second) =>
+            String(second.get('createdAt') || '').localeCompare(String(first.get('createdAt') || ''))
+            || first.id.localeCompare(second.id)
+        )[0];
+    return existing?.ref || null;
+}
+
+async function saveFriendship(firstUid, secondUid, firstName, secondName) {
+    const existingFriendship = await findExistingFriendship(firstUid, secondUid);
+    if (existingFriendship) return;
+
+    const friendshipRef = firestore.collection('matches').doc(getFriendshipId(firstUid, secondUid));
+    await firestore.runTransaction(async (transaction) => {
+        const snapshot = await transaction.get(friendshipRef);
+        if (snapshot.exists) return;
+
+        transaction.create(friendshipRef, {
+            participants: [firstUid, secondUid],
+            participantNames: {
+                [firstUid]: firstName,
+                [secondUid]: secondName
+            },
+            createdAt: new Date().toISOString()
+        });
+    });
+}
+
 async function requireFirebaseUser(req, res, next) {
     const authorization = req.get('authorization') || '';
     const match = authorization.match(/^Bearer (.+)$/i);
@@ -659,6 +698,9 @@ const allowedReasons = [
 ];
 
 const queues = new Map();
+const connectedSocketsByUid = new Map();
+const callsById = new Map();
+const activeCallByUid = new Map();
 
 async function usersHaveBlockedEachOther(firstUid, secondUid) {
     const firstBlock = firestore.collection('users').doc(firstUid)
@@ -670,6 +712,61 @@ async function usersHaveBlockedEachOther(firstUid, secondUid) {
         secondBlock.get()
     ]);
     return firstSnapshot.exists || secondSnapshot.exists;
+}
+
+function getConnectedSockets(uid) {
+    const socketIds = connectedSocketsByUid.get(uid);
+    if (!socketIds) return [];
+    return [...socketIds]
+        .map((socketId) => io.sockets.sockets.get(socketId))
+        .filter((client) => client?.connected);
+}
+
+function clearCall(call) {
+    clearTimeout(call.ringTimeout);
+    callsById.delete(call.id);
+    if (activeCallByUid.get(call.callerUid) === call.id) {
+        activeCallByUid.delete(call.callerUid);
+    }
+    if (activeCallByUid.get(call.calleeUid) === call.id) {
+        activeCallByUid.delete(call.calleeUid);
+    }
+
+    for (const client of [
+        io.sockets.sockets.get(call.callerSocketId),
+        ...getConnectedSockets(call.calleeUid)
+    ]) {
+        if (client?.activeCallId === call.id) client.activeCallId = null;
+    }
+}
+
+function finishCall(call, callerEvent, calleeEvent, payload, exceptSocketId = null) {
+    const caller = io.sockets.sockets.get(call.callerSocketId);
+    if (caller?.connected && caller.id !== exceptSocketId) {
+        caller.emit(callerEvent, payload);
+    }
+    for (const callee of getConnectedSockets(call.calleeUid)) {
+        if (callee.id !== exceptSocketId) callee.emit(calleeEvent, payload);
+    }
+    clearCall(call);
+}
+
+async function getCallPartnerUid(matchId, userId) {
+    if (!validDocumentId(matchId)) return null;
+
+    const snapshot = await firestore.collection('matches').doc(matchId).get();
+    const participants = snapshot.data()?.participants;
+    if (
+        !snapshot.exists
+        || !Array.isArray(participants)
+        || participants.length !== 2
+        || !participants.includes(userId)
+    ) {
+        return null;
+    }
+
+    const partnerUid = participants.find((uid) => uid !== userId);
+    return validUid(partnerUid) ? partnerUid : null;
 }
 
 function getQueue(topic) {
@@ -752,6 +849,8 @@ async function join(socket, topic) {
     const sessionId = crypto.randomUUID();
     socket.matchSessionId = sessionId;
     other.matchSessionId = sessionId;
+    socket.likedMatchSessionId = null;
+    other.likedMatchSessionId = null;
 
     socket.emit('matched', { initiator: true, sessionId });
     other.emit('matched', { initiator: false, sessionId });
@@ -764,6 +863,7 @@ function unpair(socket) {
 
     if (!partner) {
         socket.matchSessionId = null;
+        socket.likedMatchSessionId = null;
         return;
     }
 
@@ -771,6 +871,8 @@ function unpair(socket) {
     partner.partner = null;
     socket.matchSessionId = null;
     partner.matchSessionId = null;
+    socket.likedMatchSessionId = null;
+    partner.likedMatchSessionId = null;
 
     partner.emit('partner-left');
     addToQueue(partner);
@@ -820,6 +922,254 @@ io.use(async (socket, next) => {
 
 io.on('connection', (socket) => {
     console.log('มีผู้ใช้เชื่อมต่อ:', socket.id);
+    if (!connectedSocketsByUid.has(socket.uid)) {
+        connectedSocketsByUid.set(socket.uid, new Set());
+    }
+    connectedSocketsByUid.get(socket.uid).add(socket.id);
+
+    socket.on('call:start', async (data, callback) => {
+        const reply = (result) => {
+            if (typeof callback === 'function') callback(result);
+        };
+        const { matchId, callType } = data || {};
+        if (!validDocumentId(matchId) || !['audio', 'video'].includes(callType)) {
+            reply({ success: false, message: 'ข้อมูลการโทรไม่ถูกต้อง' });
+            return;
+        }
+
+        try {
+            const calleeUid = await getCallPartnerUid(matchId, socket.uid);
+            if (!calleeUid || calleeUid === socket.uid) {
+                reply({ success: false, message: 'โทรได้เฉพาะเพื่อนที่แมตช์แล้วเท่านั้น' });
+                return;
+            }
+            if (await usersHaveBlockedEachOther(socket.uid, calleeUid)) {
+                reply({ success: false, message: 'ไม่สามารถโทรหาผู้ใช้นี้ได้' });
+                return;
+            }
+
+            const calleeSockets = getConnectedSockets(calleeUid);
+            if (calleeSockets.length === 0) {
+                reply({ success: false, message: 'เพื่อนไม่ออนไลน์ในขณะนี้' });
+                return;
+            }
+            if (activeCallByUid.has(socket.uid) || activeCallByUid.has(calleeUid)) {
+                reply({ success: false, message: 'คุณหรือเพื่อนกำลังอยู่ในสายอื่น' });
+                return;
+            }
+
+            const callId = crypto.randomUUID();
+            const call = {
+                id: callId,
+                matchId,
+                callType,
+                callerUid: socket.uid,
+                calleeUid,
+                callerSocketId: socket.id,
+                calleeSocketId: null,
+                status: 'ringing'
+            };
+            callsById.set(callId, call);
+            call.ringTimeout = setTimeout(() => {
+                if (callsById.get(callId) !== call || call.status !== 'ringing') return;
+                finishCall(
+                    call,
+                    'call:ended',
+                    'call:ended',
+                    { callId, message: 'ไม่มีคนรับสาย' }
+                );
+            }, 30000);
+            activeCallByUid.set(socket.uid, callId);
+            activeCallByUid.set(calleeUid, callId);
+            socket.activeCallId = callId;
+
+            reply({ success: true, callId });
+            for (const callee of calleeSockets) {
+                callee.emit('call:incoming', {
+                    callId,
+                    matchId,
+                    callType,
+                    callerName: socket.displayName
+                });
+            }
+        } catch (error) {
+            console.error('เริ่มสายโทรไม่สำเร็จ:', error);
+            reply({ success: false, message: 'เริ่มสายโทรไม่สำเร็จ กรุณาลองอีกครั้ง' });
+        }
+    });
+
+    socket.on('call:accept', async (data, callback) => {
+        const reply = (result) => {
+            if (typeof callback === 'function') callback(result);
+        };
+        const call = callsById.get(data?.callId);
+        if (!call || call.calleeUid !== socket.uid || call.status !== 'ringing') {
+            reply({ success: false, message: 'สายนี้ไม่พร้อมรับแล้ว' });
+            return;
+        }
+
+        try {
+            if (await usersHaveBlockedEachOther(call.callerUid, call.calleeUid)) {
+                finishCall(
+                    call,
+                    'call:rejected',
+                    'call:ended',
+                    { callId: call.id, message: 'ไม่สามารถโทรหาผู้ใช้นี้ได้' },
+                    socket.id
+                );
+                reply({ success: false, message: 'ไม่สามารถรับสายนี้ได้' });
+                return;
+            }
+
+            if (callsById.get(call.id) !== call || call.status !== 'ringing') {
+                reply({ success: false, message: 'สายนี้ไม่พร้อมรับแล้ว' });
+                return;
+            }
+            const caller = io.sockets.sockets.get(call.callerSocketId);
+            if (!caller?.connected) {
+                finishCall(
+                    call,
+                    'call:ended',
+                    'call:ended',
+                    { callId: call.id, message: 'ผู้โทรไม่ได้เชื่อมต่อแล้ว' }
+                );
+                reply({ success: false, message: 'ผู้โทรไม่ได้เชื่อมต่อแล้ว' });
+                return;
+            }
+
+            call.status = 'active';
+            clearTimeout(call.ringTimeout);
+            call.calleeSocketId = socket.id;
+            socket.activeCallId = call.id;
+            for (const callee of getConnectedSockets(call.calleeUid)) {
+                if (callee.id !== socket.id) {
+                    callee.emit('call:taken', { callId: call.id });
+                }
+            }
+            caller.emit('call:accepted', { callId: call.id, callType: call.callType });
+            reply({ success: true });
+        } catch (error) {
+            console.error('รับสายไม่สำเร็จ:', error);
+            reply({ success: false, message: 'รับสายไม่สำเร็จ กรุณาลองอีกครั้ง' });
+        }
+    });
+
+    socket.on('call:decline', (data, callback) => {
+        const call = callsById.get(data?.callId);
+        if (!call || call.calleeUid !== socket.uid || call.status !== 'ringing') {
+            if (typeof callback === 'function') callback({ success: false });
+            return;
+        }
+
+        finishCall(
+            call,
+            'call:rejected',
+            'call:ended',
+            { callId: call.id },
+            socket.id
+        );
+        if (typeof callback === 'function') callback({ success: true });
+    });
+
+    socket.on('call:cancel', (data, callback) => {
+        const call = callsById.get(data?.callId);
+        if (!call || call.callerSocketId !== socket.id || call.status !== 'ringing') {
+            if (typeof callback === 'function') callback({ success: false });
+            return;
+        }
+
+        finishCall(
+            call,
+            'call:ended',
+            'call:ended',
+            { callId: call.id },
+            socket.id
+        );
+        if (typeof callback === 'function') callback({ success: true });
+    });
+
+    socket.on('call:hangup', (data) => {
+        const call = callsById.get(data?.callId);
+        if (
+            !call
+            || call.status !== 'active'
+            || (call.callerSocketId !== socket.id && call.calleeSocketId !== socket.id)
+        ) {
+            return;
+        }
+
+        finishCall(
+            call,
+            'call:ended',
+            'call:ended',
+            { callId: call.id },
+            socket.id
+        );
+    });
+
+    socket.on('call:signal', (data) => {
+        const call = callsById.get(data?.callId);
+        if (
+            !call
+            || call.status !== 'active'
+            || socket.activeCallId !== call.id
+            || (call.callerSocketId !== socket.id && call.calleeSocketId !== socket.id)
+        ) {
+            return;
+        }
+
+        const signal = data.signal;
+        let safeSignal = null;
+        if (
+            signal?.description
+            && ['offer', 'answer'].includes(signal.description.type)
+            && typeof signal.description.sdp === 'string'
+            && signal.description.sdp.length <= 50000
+        ) {
+            safeSignal = {
+                description: {
+                    type: signal.description.type,
+                    sdp: signal.description.sdp
+                }
+            };
+        } else if (
+            signal?.candidate
+            && typeof signal.candidate.candidate === 'string'
+            && signal.candidate.candidate.length <= 4096
+        ) {
+            safeSignal = {
+                candidate: {
+                    candidate: signal.candidate.candidate,
+                    sdpMid: typeof signal.candidate.sdpMid === 'string'
+                        ? signal.candidate.sdpMid
+                        : null,
+                    sdpMLineIndex: Number.isInteger(signal.candidate.sdpMLineIndex)
+                        ? signal.candidate.sdpMLineIndex
+                        : null,
+                    usernameFragment: typeof signal.candidate.usernameFragment === 'string'
+                        ? signal.candidate.usernameFragment
+                        : null
+                }
+            };
+        }
+        if (!safeSignal) return;
+
+        const peerSocketId = socket.id === call.callerSocketId
+            ? call.calleeSocketId
+            : call.callerSocketId;
+        const peer = io.sockets.sockets.get(peerSocketId);
+        if (!peer?.connected) {
+            finishCall(
+                call,
+                'call:ended',
+                'call:ended',
+                { callId: call.id, message: 'การเชื่อมต่อกับเพื่อนขาดหาย' }
+            );
+            return;
+        }
+
+        peer.emit('call:signal', { callId: call.id, signal: safeSignal });
+    });
 
     socket.on('join', (data) => {
         join(socket, data?.topic).catch((error) => {
@@ -870,21 +1220,35 @@ io.on('connection', (socket) => {
         }
 
         try {
+            if (socket.uid === partner.uid) {
+                socket.emit('like-error', { message: 'ไม่สามารถเพิ่มบัญชีตัวเองเป็นเพื่อนได้' });
+                return;
+            }
+
             if (await usersHaveBlockedEachOther(socket.uid, partner.uid)) {
                 socket.emit('like-error', { message: 'ไม่สามารถเพิ่มผู้ใช้รายนี้เป็นเพื่อนได้' });
                 return;
             }
 
-            await firestore.collection('matches').doc(sessionId).set({
-                participants: [socket.uid, partner.uid],
-                participantNames: {
-                    [socket.uid]: socket.displayName,
-                    [partner.uid]: partner.displayName
-                },
-                createdAt: new Date().toISOString()
+            if (!registerLike(socket, partner, sessionId)) {
+                socket.emit('like-pending', { sessionId });
+                return;
+            }
+
+            await saveFriendship(
+                socket.uid,
+                partner.uid,
+                socket.displayName,
+                partner.displayName
+            );
+            socket.emit('like-saved', {
+                sessionId,
+                friendName: partner.displayName
             });
-            socket.emit('like-saved', { sessionId, friendName: partner.displayName });
-            partner.emit('friend-added', { sessionId, friendName: socket.displayName });
+            partner.emit('friend-added', {
+                sessionId,
+                friendName: socket.displayName
+            });
         } catch (error) {
             console.error('บันทึกเพื่อนจากการสุ่มคุยไม่สำเร็จ:', error);
             socket.emit('like-error', { message: 'เพิ่มเพื่อนไม่สำเร็จ กรุณาลองอีกครั้ง' });
@@ -959,6 +1323,32 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
+        const activeCall = callsById.get(socket.activeCallId);
+        if (activeCall) {
+            finishCall(
+                activeCall,
+                'call:ended',
+                'call:ended',
+                { callId: activeCall.id, message: 'อีกฝ่ายหลุดจากสาย' },
+                socket.id
+            );
+        }
+
+        const userSocketIds = connectedSocketsByUid.get(socket.uid);
+        userSocketIds?.delete(socket.id);
+        if (userSocketIds?.size === 0) {
+            connectedSocketsByUid.delete(socket.uid);
+            const pendingCall = callsById.get(activeCallByUid.get(socket.uid));
+            if (pendingCall?.calleeUid === socket.uid && pendingCall.status === 'ringing') {
+                finishCall(
+                    pendingCall,
+                    'call:ended',
+                    'call:ended',
+                    { callId: pendingCall.id, message: 'เพื่อนไม่ออนไลน์แล้ว' }
+                );
+            }
+        }
+
         removeFromQueue(socket);
 
         unpair(socket);

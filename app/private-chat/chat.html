@@ -47,8 +47,11 @@
                             <button class="friend-action-btn remove-friend-btn" id="removeFriendBtn" type="button" disabled>ลบเพื่อน</button>
                             <button class="friend-action-btn block-friend-btn" id="blockFriendBtn" type="button" disabled>บล็อก</button>
                         </div>
-                        <button class="video-call-btn" id="videoCallBtn">
-                            <i data-lucide="video"></i> เปิดกล้อง
+                        <button class="call-btn audio-call-btn" id="audioCallBtn" type="button" disabled>
+                            <i data-lucide="phone"></i> โทรเสียง
+                        </button>
+                        <button class="call-btn video-call-btn" id="videoCallBtn" type="button" disabled>
+                            <i data-lucide="video"></i> วิดีโอคอล
                         </button>
                     </div>
 
@@ -68,15 +71,32 @@
         </div>
     </div>
 
-    <!-- Modal หน้าต่างจำลองวิดีโอคอล -->
-    <div class="video-modal" id="videoModal">
-        <div class="video-modal-content">
-            <div class="video-screen">
-                <i data-lucide="video" style="width: 40px; height: 40px;"></i>
-                <span>กำลังเชื่อมต่อวิดีโอคอล...</span>
+    <div class="call-modal" id="callModal" role="dialog" aria-modal="true" aria-labelledby="callTitle" hidden>
+        <section class="call-panel">
+            <header class="call-header">
+                <div>
+                    <h2 id="callTitle">กำลังโทร</h2>
+                    <p id="callStatus" role="status" aria-live="polite"></p>
+                </div>
+            </header>
+            <div class="call-video-stage" id="callVideoStage" hidden>
+                <video id="remoteCallVideo" autoplay playsinline></video>
+                <video id="localCallVideo" autoplay muted playsinline></video>
             </div>
-            <button class="close-video-btn" id="closeVideoBtn">วางสาย / ปิดกล้อง</button>
-        </div>
+            <div class="call-audio-stage" id="callAudioStage" hidden>
+                <i data-lucide="phone"></i>
+                <span id="audioCallName"></span>
+                <audio id="remoteCallAudio" autoplay></audio>
+            </div>
+            <div class="call-controls">
+                <button class="call-control accept-call-btn" id="acceptCallBtn" type="button" hidden>รับสาย</button>
+                <button class="call-control decline-call-btn" id="declineCallBtn" type="button" hidden>ปฏิเสธ</button>
+                <button class="call-control" id="cancelCallBtn" type="button" hidden>ยกเลิกการโทร</button>
+                <button class="call-control" id="toggleMicBtn" type="button" hidden>ปิดไมค์</button>
+                <button class="call-control" id="toggleCameraBtn" type="button" hidden>ปิดกล้อง</button>
+                <button class="call-control end-call-btn" id="endCallBtn" type="button" hidden>วางสาย</button>
+            </div>
+        </section>
     </div>
 
     <dialog class="friend-action-dialog" id="friendActionDialog" aria-labelledby="friendActionTitle">
@@ -90,6 +110,7 @@
 
 
     <script src="/app/shared/navigation.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script type="module" src="chat.js"></script>
     <script>
         lucide.createIcons();

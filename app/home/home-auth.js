@@ -18,31 +18,40 @@ const friendCount = document.getElementById("friendCount");
 let friendsUnsubscribe = null;
 
 function renderFriends(snapshot, filters, user) {
-  const friends = snapshot.docs.flatMap((matchDocument) => {
-    const match = matchDocument.data();
-    if (
-      !Array.isArray(match.participants)
-      || match.participants.length !== 2
-      || !match.participants.includes(user.uid)
-      || filters.hiddenMatchIds.has(matchDocument.id)
-    ) {
-      return [];
-    }
+  const seenFriendUids = new Set();
+  const friends = [...snapshot.docs]
+    .sort((first, second) =>
+      String(second.get("createdAt") || "").localeCompare(String(first.get("createdAt") || ""))
+      || first.id.localeCompare(second.id)
+    )
+    .flatMap((matchDocument) => {
+      const match = matchDocument.data();
+      if (
+        !Array.isArray(match.participants)
+        || match.participants.length !== 2
+        || !match.participants.includes(user.uid)
+      ) {
+        return [];
+      }
 
-    const friendUid = match.participants.find((uid) => uid !== user.uid);
-    if (!friendUid || filters.blockedUserIds.has(friendUid)) return [];
+      const friendUid = match.participants.find((uid) => uid !== user.uid);
+      if (!friendUid || seenFriendUids.has(friendUid)) return [];
+      seenFriendUids.add(friendUid);
+      if (
+        filters.hiddenMatchIds.has(matchDocument.id)
+        || filters.blockedUserIds.has(friendUid)
+      ) return [];
 
-    const names = match.participantNames;
-    const displayName = names && typeof names[friendUid] === "string"
-      ? names[friendUid].trim()
-      : "";
-    return [{
-      id: matchDocument.id,
-      name: displayName || "เพื่อน Dukdui",
-      createdAt: match.createdAt || ""
-    }];
-  });
-  friends.sort((first, second) => String(second.createdAt).localeCompare(String(first.createdAt)));
+      const names = match.participantNames;
+      const displayName = names && typeof names[friendUid] === "string"
+        ? names[friendUid].trim()
+        : "";
+      return [{
+        id: matchDocument.id,
+        name: displayName || "เพื่อน Dukdui",
+        createdAt: match.createdAt || ""
+      }];
+    });
 
   friendCount.textContent = `(${friends.length})`;
   friendList.replaceChildren();

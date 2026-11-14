@@ -254,7 +254,7 @@
 
             <div class="buttons">
                 <button id="start" disabled>เริ่มสุ่มจับคู่</button>
-                <button id="like" disabled>♡ ถูกใจและเพิ่มเป็นเพื่อน</button>
+                <button id="like" disabled>♡ ถูกใจ</button>
                 <button id="next" disabled>ถัดไป</button>
                 <button id="report" disabled>⚑ รายงาน</button>
                 <button id="leave" disabled>ออก</button>
@@ -368,7 +368,7 @@
             currentMatchSessionId = null;
             friendSaved = false;
             likeBtn.disabled = true;
-            likeBtn.textContent = '♡ ถูกใจและเพิ่มเป็นเพื่อน';
+            likeBtn.textContent = '♡ ถูกใจ';
             friendFeedback.textContent = '';
         }
 
@@ -586,7 +586,7 @@ submitReportBtn.onclick = () => {
         likeBtn.onclick = () => {
             if (!currentMatchSessionId || likeBtn.disabled) return;
             likeBtn.disabled = true;
-            likeBtn.textContent = 'กำลังเพิ่มเพื่อน...';
+            likeBtn.textContent = 'ส่งถูกใจแล้ว';
             friendFeedback.textContent = '';
             socket.emit('like', { sessionId: currentMatchSessionId });
         };
@@ -595,11 +595,18 @@ submitReportBtn.onclick = () => {
             if (!sessionId || sessionId !== currentMatchSessionId) return;
             friendSaved = true;
             likeBtn.disabled = true;
-            likeBtn.textContent = '✓ เป็นเพื่อนแล้ว';
+            likeBtn.textContent = '✓ เป็นเพื่อนกันแล้ว';
             friendFeedback.textContent = friendName
-                ? `เพิ่ม ${friendName} ในเพื่อนแล้ว เปิดแชทต่อได้ที่หน้าแชท`
-                : 'เพิ่มเพื่อนแล้ว เปิดแชทต่อได้ที่หน้าแชท';
+                ? `ต่างฝ่ายต่างถูกใจ ${friendName} แล้ว เปิดแชทต่อได้ที่หน้าแชท`
+                : 'ต่างฝ่ายต่างถูกใจกันแล้ว เปิดแชทต่อได้ที่หน้าแชท';
         }
+
+        socket.on('like-pending', ({ sessionId } = {}) => {
+            if (!sessionId || sessionId !== currentMatchSessionId) return;
+            likeBtn.disabled = true;
+            likeBtn.textContent = 'รออีกฝ่ายกดถูกใจ';
+            friendFeedback.textContent = 'จะเพิ่มเป็นเพื่อนเมื่อทั้งสองฝ่ายกดถูกใจ';
+        });
 
         socket.on('like-saved', ({ sessionId, friendName } = {}) => {
             showFriendAdded(sessionId, friendName);
@@ -612,7 +619,7 @@ submitReportBtn.onclick = () => {
         socket.on('like-error', ({ message } = {}) => {
             friendFeedback.textContent = message || 'เพิ่มเพื่อนไม่สำเร็จ กรุณาลองอีกครั้ง';
             likeBtn.disabled = !currentMatchSessionId;
-            likeBtn.textContent = '♡ ถูกใจและเพิ่มเป็นเพื่อน';
+            likeBtn.textContent = '♡ ถูกใจ';
         });
 
         socket.on('signal', async (data) => {
@@ -655,7 +662,7 @@ submitReportBtn.onclick = () => {
             currentMatchSessionId = null;
             likeBtn.disabled = true;
             if (!friendSaved) {
-                likeBtn.textContent = '♡ ถูกใจและเพิ่มเป็นเพื่อน';
+                likeBtn.textContent = '♡ ถูกใจ';
             }
 
             showStatus('อีกฝั่งออกไปแล้ว กำลังหาคู่ใหม่...');
